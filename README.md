@@ -15,7 +15,7 @@ Students sign in with an 8-digit student code and password. The app maps the cod
 
 ## First-time Unit Leader setup
 
-The migration has created 12 classes (`Class 01`–`Class 12`), each with a capacity of 20, and assigned the currently published Unit 1 assignments to those classes. It preserved existing records. No engineer identities, actual student roster, or real class mapping were supplied, so none were invented or assigned. At the time of migration, the project had one Unit Leader, one student account, and no engineer assignments or class roster entries; students will not see assignments until they are placed in a class.
+The migration has created 12 classes (`Class 01`–`Class 12`), each with a capacity of 20, and assigned the currently published Unit 1 assignments to those classes. It preserved existing records. No real Engineer identities, student roster, or class mapping were supplied, so none were invented. The existing `01090680` account is retained as a Student, with its password unchanged, but is not assigned to a class yet. Create the actual Engineer accounts and import the real class rosters before operational use.
 
 1. Sign in using the existing Unit Leader/staff account, then open **Classes**.
 2. Create the six Engineer accounts using their real names and email addresses. Assign exactly two classes to each Engineer. The database prevents an Engineer from being assigned to a third class and prevents two Engineers from owning the same class.
@@ -25,7 +25,7 @@ The migration has created 12 classes (`Class 01`–`Class 12`), each with a capa
 
 ## Data, security, and local development
 
-The Supabase migration is `supabase/migrations/20261019192114_btec_assessment_portal.sql`. Class scope, student privacy, feedback publication, due dates, attempt sequencing, criterion dependencies, and the private 20 MB file buckets are enforced by database policies/triggers as well as the UI. Keep service-role credentials out of browser code and do not make the submission or brief buckets public.
+The Supabase migrations are `supabase/migrations/20261019192114_btec_assessment_portal.sql`, `supabase/migrations/20261019200525_portal_engineer_security_fixes.sql`, and `supabase/migrations/20261019201506_optimize_rls_auth_uid.sql`. Class scope, student privacy, feedback publication, due dates, attempt sequencing, criterion dependencies, Engineer account creation, and the private 20 MB file buckets are enforced by database policies/triggers as well as the UI. Keep service-role credentials out of browser code and do not make the submission or brief buckets public.
 
 ```sh
 pnpm install --frozen-lockfile

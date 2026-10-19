@@ -14,9 +14,13 @@
 - [x] Export grades to Excel and print an individual feedback form to PDF.
 - [x] Use RLS for role/class/student boundaries, private Storage buckets with signed URLs, server-enforced upload/type/size/deadline/attempt rules, and protection against student role/class changes.
 - [x] Provide responsive English/Arabic controls and RTL layout support.
+- [x] Fix the live Engineer-creation RPC's ambiguous `user_id` reference, restrict trigger functions from direct API execution, self-scope legacy role checks, and add missing foreign-key indexes.
+- [x] Restore the retained `01090680` login to Student and remove its unintended Engineer-class link without changing its Auth password.
+- [x] Optimize public RLS policies to evaluate `auth.uid()` as a statement-level init plan; the Supabase advisor no longer reports the prior RLS init-plan warnings.
 
 ## Live data setup still required
 
-- [ ] Create the six real Engineer accounts and assign two of the 12 classes to each; actual staff names and email addresses were not supplied.
+- [ ] Create the six real Engineer accounts and allocate two classes to each; no real Engineer identities or class assignments are currently configured.
 - [ ] Import the real student roster (up to 20 per class); actual names, student codes, and class mapping were not supplied. The existing `01090680` student account is not assigned to a class yet.
 - [ ] Confirm/replace demo assignments, briefs, due dates, and public demo learning resources with academy-approved materials before operational use.
+- [ ] Enable Supabase Auth leaked-password protection in the project dashboard; the live security advisor currently reports this setting is disabled.
