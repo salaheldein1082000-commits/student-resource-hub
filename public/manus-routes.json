@@ -1,10 +1,13 @@
 {
   "routes": [
-    { "path": "/", "title": "Unit 1 Studio" },
+    { "path": "/", "title": "BTEC Assessment Portal" },
     { "path": "/auth", "title": "Sign in" },
     { "path": "/dashboard", "title": "Dashboard" },
     { "path": "/resources", "title": "Resources" },
     { "path": "/assignments/:id", "title": "Assignment" },
+    { "path": "/manage/classes", "title": "Manage classes and Engineers" },
+    { "path": "/manage/import", "title": "Import students" },
+    { "path": "/manage/submissions", "title": "Submissions" },
     { "path": "/manage/assignments", "title": "Manage assignments" },
     { "path": "/manage/resources", "title": "Manage resources" },
     { "path": "/manage/announcements", "title": "Manage announcements" },

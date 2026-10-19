@@ -107,3 +107,8 @@
 @utility shadow-card { box-shadow: var(--shadow-card); }
 @utility bg-hero { background-image: var(--gradient-hero); }
 @utility font-display { font-family: var(--font-display); }
+
+[dir="rtl"] .text-left { text-align: right; }
+[dir="rtl"] .pl-5 { padding-left: 0; padding-right: 1.25rem; }
+[dir="rtl"] .mr-2 { margin-right: 0; margin-left: 0.5rem; }
+[dir="rtl"] .font-mono { direction: ltr; unicode-bidi: plaintext; }

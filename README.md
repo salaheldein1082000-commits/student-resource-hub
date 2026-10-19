@@ -1,55 +1,49 @@
-# Student Resource Hub
+# BTEC Assessment Portal
 
-RESOURCES HUB (shared page for all students)
+For Unit 1, *IT Systems — Strategy, Management and Infrastructure*, at Elsewedy Technical Academy (Pearson BTEC Level 3 Extended Diploma in IT). This project is connected to Lovable; commits pushed to `main` sync back to the editor.
 
-- Table resources(id, unit_no, learning_aim, title, type: video | pdf | link | slides | template, url, description, linked_criteria[] (e.g. A.P1, A.M1), is_pinned, visible_from, is_published, sort_order)
+## Portal features
 
-- Students see a "Resources" page grouped by Learning Aim, with filters by type and criterion, plus a search box.
-
-- Videos are embedded from YouTube/Vimeo unlisted links with an in-page player; PDFs open in a viewer with a download button.
-
-- Assessor can add/edit/reorder/hide resources and pin important ones.
-
-- Optional: resource_views(student_id, resource_id, viewed_at) so the assessor can see who watched what.
-
-- On the student's feedback page, for every criterion NOT achieved, show the linked resources for that criterion as "Helpful materials".
-
-- Add an "Announcements" strip at the top of the Resources page for the assessor's notices (deadline reminders, exam tips).
-
-EXTRAS
-
-- Digital authentication/declaration checkbox on upload, stored with timestamp.
-
-- Feedback bank: reusable comment snippets per criterion for the assessor.
-
-- Attempt history per submission.
-
-- Dashboard with submission rate and criteria-achievement stats.
-
-This project was built with [Lovable](https://lovable.dev).
+- Students see assignments for their own class, download PDF briefs, upload PDF/DOCX work, follow attempt/status history, and view feedback only after publication.
+- Engineers assess only students in their assigned classes. The Unit Leader has global access to classes, staff, students, assignments, submissions, and feedback.
+- Assessment feedback includes criterion-level Yes/No decisions and comments, general comments, draft/publish/resubmission controls, Excel grade exports, and a print-to-PDF feedback form.
+- English/Arabic language toggle with RTL layout, responsive navigation, private Supabase Storage, short-lived signed file URLs, and database-enforced row-level security.
 
 ## Authentication
 
-Students sign in with an 8-digit student code and password. The app maps the code to Supabase
-Auth's internal email alias format (`<student-code>@student.local`), so students only see and
-enter their code. The migration seeds the development account `01090680` with the requested
-password; change it before using the project with real students.
+Students sign in with an 8-digit student code and password. The app maps the code to Supabase Auth's internal alias format (`<student-code>@student.local`). Staff sign in using their email and password. The existing `01090680` student-code account is retained; its class must be set by the Unit Leader before it sees class assignments. Include that code once in the CSV for its actual class, with the student's correct name; the importer will place the existing account and keep its password. Do not share or reuse development credentials for real students.
 
-## Build with Lovable
+## First-time Unit Leader setup
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/22d62a82-dd32-42ad-8541-c4d7a22223c3).
+The migration has created 12 classes (`Class 01`–`Class 12`), each with a capacity of 20, and assigned the currently published Unit 1 assignments to those classes. It preserved existing records. No engineer identities, actual student roster, or real class mapping were supplied, so none were invented or assigned. At the time of migration, the project had one Unit Leader, one student account, and no engineer assignments or class roster entries; students will not see assignments until they are placed in a class.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+1. Sign in using the existing Unit Leader/staff account, then open **Classes**.
+2. Create the six Engineer accounts using their real names and email addresses. Assign exactly two classes to each Engineer. The database prevents an Engineer from being assigned to a third class and prevents two Engineers from owning the same class.
+3. Use **Import students** to load each class roster. CSV headers: `student_code,full_name`. Import up to 20 students per class. Review row-level validation results; any newly generated temporary passwords are shown only in the import result and must be distributed privately.
+4. Open **Assignments** to confirm class visibility, add the real due date and approved brief PDF, and publish the assignment. Assignment 1 is seeded with A.P1, A.P2, A.P3 (Task 1) and A.M1, A.D1 (Task 2). The initial public resources/assignments marked as demo content should be replaced with academy-approved materials before relying on them for teaching.
+5. Students sign in with their code and password, choose their class assignment, and upload a PDF or DOCX file up to 20 MB. Engineers assess and publish feedback; only then can the student see it. An Engineer can allow another attempt after publishing feedback.
 
-## Development
+## Data, security, and local development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+The Supabase migration is `supabase/migrations/20261019192114_btec_assessment_portal.sql`. Class scope, student privacy, feedback publication, due dates, attempt sequencing, criterion dependencies, and the private 20 MB file buckets are enforced by database policies/triggers as well as the UI. Keep service-role credentials out of browser code and do not make the submission or brief buckets public.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+pnpm install --frozen-lockfile
+pnpm dev
 ```
+
+Tests and production checks:
+
+```sh
+pnpm test
+pnpm exec tsc --noEmit
+pnpm build
+```
+
+## Existing resource hub
+
+- Shared resources are grouped by Learning Aim with filters, search, video/PDF support, and criterion-linked helpful materials.
+- The Unit Leader can manage resources, announcements, and reusable feedback snippets.
+- Existing resources, announcements, attempts, and legacy assessment records are retained during portal migration.
+
+This project was built with [Lovable](https://lovable.dev). Continue developing in the connected Lovable project; push tested commits to `main` and never rewrite published history.

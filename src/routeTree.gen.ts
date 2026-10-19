@@ -18,8 +18,11 @@ import { Route as AuthenticatedResourcesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAssignmentsIdRouteImport } from './routes/_authenticated/assignments.$id'
 import { Route as AuthenticatedManageAnnouncementsRouteImport } from './routes/_authenticated/manage/announcements'
 import { Route as AuthenticatedManageAssignmentsRouteImport } from './routes/_authenticated/manage/assignments'
+import { Route as AuthenticatedManageClassesRouteImport } from './routes/_authenticated/manage/classes'
+import { Route as AuthenticatedManageImportRouteImport } from './routes/_authenticated/manage/import'
 import { Route as AuthenticatedManageResourcesRouteImport } from './routes/_authenticated/manage/resources'
 import { Route as AuthenticatedManageSnippetsRouteImport } from './routes/_authenticated/manage/snippets'
+import { Route as AuthenticatedManageSubmissionsRouteImport } from './routes/_authenticated/manage/submissions'
 import { Route as AuthenticatedManageSubmissionsIdRouteImport } from './routes/_authenticated/manage/submissions.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -70,6 +73,18 @@ const AuthenticatedManageAssignmentsRoute =
     path: '/assignments',
     getParentRoute: () => AuthenticatedManageRouteRoute,
   } as any)
+const AuthenticatedManageClassesRoute =
+  AuthenticatedManageClassesRouteImport.update({
+    id: '/classes',
+    path: '/classes',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
+  } as any)
+const AuthenticatedManageImportRoute =
+  AuthenticatedManageImportRouteImport.update({
+    id: '/import',
+    path: '/import',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
+  } as any)
 const AuthenticatedManageResourcesRoute =
   AuthenticatedManageResourcesRouteImport.update({
     id: '/resources',
@@ -82,11 +97,17 @@ const AuthenticatedManageSnippetsRoute =
     path: '/snippets',
     getParentRoute: () => AuthenticatedManageRouteRoute,
   } as any)
+const AuthenticatedManageSubmissionsRoute =
+  AuthenticatedManageSubmissionsRouteImport.update({
+    id: '/submissions',
+    path: '/submissions',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
+  } as any)
 const AuthenticatedManageSubmissionsIdRoute =
   AuthenticatedManageSubmissionsIdRouteImport.update({
-    id: '/submissions/$id',
-    path: '/submissions/$id',
-    getParentRoute: () => AuthenticatedManageRouteRoute,
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedManageSubmissionsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -98,8 +119,11 @@ export interface FileRoutesByFullPath {
   '/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
   '/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
   '/manage/assignments': typeof AuthenticatedManageAssignmentsRoute
+  '/manage/classes': typeof AuthenticatedManageClassesRoute
+  '/manage/import': typeof AuthenticatedManageImportRoute
   '/manage/resources': typeof AuthenticatedManageResourcesRoute
   '/manage/snippets': typeof AuthenticatedManageSnippetsRoute
+  '/manage/submissions': typeof AuthenticatedManageSubmissionsRouteWithChildren
   '/manage/submissions/$id': typeof AuthenticatedManageSubmissionsIdRoute
 }
 export interface FileRoutesByTo {
@@ -111,8 +135,11 @@ export interface FileRoutesByTo {
   '/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
   '/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
   '/manage/assignments': typeof AuthenticatedManageAssignmentsRoute
+  '/manage/classes': typeof AuthenticatedManageClassesRoute
+  '/manage/import': typeof AuthenticatedManageImportRoute
   '/manage/resources': typeof AuthenticatedManageResourcesRoute
   '/manage/snippets': typeof AuthenticatedManageSnippetsRoute
+  '/manage/submissions': typeof AuthenticatedManageSubmissionsRouteWithChildren
   '/manage/submissions/$id': typeof AuthenticatedManageSubmissionsIdRoute
 }
 export interface FileRoutesById {
@@ -126,8 +153,11 @@ export interface FileRoutesById {
   '/_authenticated/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
   '/_authenticated/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
   '/_authenticated/manage/assignments': typeof AuthenticatedManageAssignmentsRoute
+  '/_authenticated/manage/classes': typeof AuthenticatedManageClassesRoute
+  '/_authenticated/manage/import': typeof AuthenticatedManageImportRoute
   '/_authenticated/manage/resources': typeof AuthenticatedManageResourcesRoute
   '/_authenticated/manage/snippets': typeof AuthenticatedManageSnippetsRoute
+  '/_authenticated/manage/submissions': typeof AuthenticatedManageSubmissionsRouteWithChildren
   '/_authenticated/manage/submissions/$id': typeof AuthenticatedManageSubmissionsIdRoute
 }
 export interface FileRouteTypes {
@@ -141,8 +171,11 @@ export interface FileRouteTypes {
     | '/assignments/$id'
     | '/manage/announcements'
     | '/manage/assignments'
+    | '/manage/classes'
+    | '/manage/import'
     | '/manage/resources'
     | '/manage/snippets'
+    | '/manage/submissions'
     | '/manage/submissions/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,8 +187,11 @@ export interface FileRouteTypes {
     | '/assignments/$id'
     | '/manage/announcements'
     | '/manage/assignments'
+    | '/manage/classes'
+    | '/manage/import'
     | '/manage/resources'
     | '/manage/snippets'
+    | '/manage/submissions'
     | '/manage/submissions/$id'
   id:
     | '__root__'
@@ -168,8 +204,11 @@ export interface FileRouteTypes {
     | '/_authenticated/assignments/$id'
     | '/_authenticated/manage/announcements'
     | '/_authenticated/manage/assignments'
+    | '/_authenticated/manage/classes'
+    | '/_authenticated/manage/import'
     | '/_authenticated/manage/resources'
     | '/_authenticated/manage/snippets'
+    | '/_authenticated/manage/submissions'
     | '/_authenticated/manage/submissions/$id'
   fileRoutesById: FileRoutesById
 }
@@ -244,6 +283,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManageAssignmentsRouteImport
       parentRoute: typeof AuthenticatedManageRouteRoute
     }
+    '/_authenticated/manage/classes': {
+      id: '/_authenticated/manage/classes'
+      path: '/classes'
+      fullPath: '/manage/classes'
+      preLoaderRoute: typeof AuthenticatedManageClassesRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
+    }
+    '/_authenticated/manage/import': {
+      id: '/_authenticated/manage/import'
+      path: '/import'
+      fullPath: '/manage/import'
+      preLoaderRoute: typeof AuthenticatedManageImportRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
+    }
     '/_authenticated/manage/resources': {
       id: '/_authenticated/manage/resources'
       path: '/resources'
@@ -258,22 +311,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManageSnippetsRouteImport
       parentRoute: typeof AuthenticatedManageRouteRoute
     }
+    '/_authenticated/manage/submissions': {
+      id: '/_authenticated/manage/submissions'
+      path: '/submissions'
+      fullPath: '/manage/submissions'
+      preLoaderRoute: typeof AuthenticatedManageSubmissionsRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
+    }
     '/_authenticated/manage/submissions/$id': {
       id: '/_authenticated/manage/submissions/$id'
-      path: '/submissions/$id'
+      path: '/$id'
       fullPath: '/manage/submissions/$id'
       preLoaderRoute: typeof AuthenticatedManageSubmissionsIdRouteImport
-      parentRoute: typeof AuthenticatedManageRouteRoute
+      parentRoute: typeof AuthenticatedManageSubmissionsRoute
     }
   }
 }
 
+interface AuthenticatedManageSubmissionsRouteChildren {
+  AuthenticatedManageSubmissionsIdRoute: typeof AuthenticatedManageSubmissionsIdRoute
+}
+
+const AuthenticatedManageSubmissionsRouteChildren: AuthenticatedManageSubmissionsRouteChildren =
+  {
+    AuthenticatedManageSubmissionsIdRoute:
+      AuthenticatedManageSubmissionsIdRoute,
+  }
+
+const AuthenticatedManageSubmissionsRouteWithChildren =
+  AuthenticatedManageSubmissionsRoute._addFileChildren(
+    AuthenticatedManageSubmissionsRouteChildren,
+  )
+
 interface AuthenticatedManageRouteRouteChildren {
   AuthenticatedManageAnnouncementsRoute: typeof AuthenticatedManageAnnouncementsRoute
   AuthenticatedManageAssignmentsRoute: typeof AuthenticatedManageAssignmentsRoute
+  AuthenticatedManageClassesRoute: typeof AuthenticatedManageClassesRoute
+  AuthenticatedManageImportRoute: typeof AuthenticatedManageImportRoute
   AuthenticatedManageResourcesRoute: typeof AuthenticatedManageResourcesRoute
   AuthenticatedManageSnippetsRoute: typeof AuthenticatedManageSnippetsRoute
-  AuthenticatedManageSubmissionsIdRoute: typeof AuthenticatedManageSubmissionsIdRoute
+  AuthenticatedManageSubmissionsRoute: typeof AuthenticatedManageSubmissionsRouteWithChildren
 }
 
 const AuthenticatedManageRouteRouteChildren: AuthenticatedManageRouteRouteChildren =
@@ -281,10 +358,12 @@ const AuthenticatedManageRouteRouteChildren: AuthenticatedManageRouteRouteChildr
     AuthenticatedManageAnnouncementsRoute:
       AuthenticatedManageAnnouncementsRoute,
     AuthenticatedManageAssignmentsRoute: AuthenticatedManageAssignmentsRoute,
+    AuthenticatedManageClassesRoute: AuthenticatedManageClassesRoute,
+    AuthenticatedManageImportRoute: AuthenticatedManageImportRoute,
     AuthenticatedManageResourcesRoute: AuthenticatedManageResourcesRoute,
     AuthenticatedManageSnippetsRoute: AuthenticatedManageSnippetsRoute,
-    AuthenticatedManageSubmissionsIdRoute:
-      AuthenticatedManageSubmissionsIdRoute,
+    AuthenticatedManageSubmissionsRoute:
+      AuthenticatedManageSubmissionsRouteWithChildren,
   }
 
 const AuthenticatedManageRouteRouteWithChildren =

@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { LocaleProvider } from "@/lib/locale";
 
 function NotFoundComponent() {
   return (
@@ -80,8 +81,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Unit 1 Studio — IT Infrastructure coursework" },
-      { name: "description", content: "Submit coursework, get feedback and study resources for Unit 1: IT Infrastructure." },
+      { title: "BTEC Assessment Portal — Unit 1" },
+      {
+        name: "description",
+        content:
+          "Submit coursework and manage assessment feedback for Pearson BTEC Level 3 Extended Diploma in IT Unit 1 at Elsewedy Technical Academy.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -131,8 +136,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster richColors />
+      <LocaleProvider>
+        <Outlet />
+        <Toaster richColors />
+      </LocaleProvider>
     </QueryClientProvider>
   );
 }
