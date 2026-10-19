@@ -10,33 +10,147 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedManageRouteRouteImport } from './routes/_authenticated/manage/route'
+import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated/resources'
+import { Route as AuthenticatedAssignmentsIdRouteImport } from './routes/_authenticated/assignments.$id'
+import { Route as AuthenticatedManageAnnouncementsRouteImport } from './routes/_authenticated/manage/announcements'
+import { Route as AuthenticatedManageResourcesRouteImport } from './routes/_authenticated/manage/resources'
+import { Route as AuthenticatedManageSnippetsRouteImport } from './routes/_authenticated/manage/snippets'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedManageRouteRoute =
+  AuthenticatedManageRouteRouteImport.update({
+    id: '/manage',
+    path: '/manage',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedResourcesRoute = AuthenticatedResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAssignmentsIdRoute =
+  AuthenticatedAssignmentsIdRouteImport.update({
+    id: '/assignments/$id',
+    path: '/assignments/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManageAnnouncementsRoute =
+  AuthenticatedManageAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
+  } as any)
+const AuthenticatedManageResourcesRoute =
+  AuthenticatedManageResourcesRouteImport.update({
+    id: '/resources',
+    path: '/resources',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
+  } as any)
+const AuthenticatedManageSnippetsRoute =
+  AuthenticatedManageSnippetsRouteImport.update({
+    id: '/snippets',
+    path: '/snippets',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/manage': typeof AuthenticatedManageRouteRouteWithChildren
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/resources': typeof AuthenticatedResourcesRoute
+  '/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
+  '/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
+  '/manage/resources': typeof AuthenticatedManageResourcesRoute
+  '/manage/snippets': typeof AuthenticatedManageSnippetsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/manage': typeof AuthenticatedManageRouteRouteWithChildren
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/resources': typeof AuthenticatedResourcesRoute
+  '/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
+  '/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
+  '/manage/resources': typeof AuthenticatedManageResourcesRoute
+  '/manage/snippets': typeof AuthenticatedManageSnippetsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/manage': typeof AuthenticatedManageRouteRouteWithChildren
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/resources': typeof AuthenticatedResourcesRoute
+  '/_authenticated/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
+  '/_authenticated/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
+  '/_authenticated/manage/resources': typeof AuthenticatedManageResourcesRoute
+  '/_authenticated/manage/snippets': typeof AuthenticatedManageSnippetsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/manage'
+    | '/dashboard'
+    | '/resources'
+    | '/assignments/$id'
+    | '/manage/announcements'
+    | '/manage/resources'
+    | '/manage/snippets'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/manage'
+    | '/dashboard'
+    | '/resources'
+    | '/assignments/$id'
+    | '/manage/announcements'
+    | '/manage/resources'
+    | '/manage/snippets'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/manage'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/resources'
+    | '/_authenticated/assignments/$id'
+    | '/_authenticated/manage/announcements'
+    | '/_authenticated/manage/resources'
+    | '/_authenticated/manage/snippets'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +162,112 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/manage': {
+      id: '/_authenticated/manage'
+      path: '/manage'
+      fullPath: '/manage'
+      preLoaderRoute: typeof AuthenticatedManageRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resources': {
+      id: '/_authenticated/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof AuthenticatedResourcesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/assignments/$id': {
+      id: '/_authenticated/assignments/$id'
+      path: '/assignments/$id'
+      fullPath: '/assignments/$id'
+      preLoaderRoute: typeof AuthenticatedAssignmentsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/manage/announcements': {
+      id: '/_authenticated/manage/announcements'
+      path: '/announcements'
+      fullPath: '/manage/announcements'
+      preLoaderRoute: typeof AuthenticatedManageAnnouncementsRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
+    }
+    '/_authenticated/manage/resources': {
+      id: '/_authenticated/manage/resources'
+      path: '/resources'
+      fullPath: '/manage/resources'
+      preLoaderRoute: typeof AuthenticatedManageResourcesRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
+    }
+    '/_authenticated/manage/snippets': {
+      id: '/_authenticated/manage/snippets'
+      path: '/snippets'
+      fullPath: '/manage/snippets'
+      preLoaderRoute: typeof AuthenticatedManageSnippetsRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
+    }
   }
 }
 
+interface AuthenticatedManageRouteRouteChildren {
+  AuthenticatedManageAnnouncementsRoute: typeof AuthenticatedManageAnnouncementsRoute
+  AuthenticatedManageResourcesRoute: typeof AuthenticatedManageResourcesRoute
+  AuthenticatedManageSnippetsRoute: typeof AuthenticatedManageSnippetsRoute
+}
+
+const AuthenticatedManageRouteRouteChildren: AuthenticatedManageRouteRouteChildren =
+  {
+    AuthenticatedManageAnnouncementsRoute:
+      AuthenticatedManageAnnouncementsRoute,
+    AuthenticatedManageResourcesRoute: AuthenticatedManageResourcesRoute,
+    AuthenticatedManageSnippetsRoute: AuthenticatedManageSnippetsRoute,
+  }
+
+const AuthenticatedManageRouteRouteWithChildren =
+  AuthenticatedManageRouteRoute._addFileChildren(
+    AuthenticatedManageRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedManageRouteRoute: typeof AuthenticatedManageRouteRouteWithChildren
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRoute
+  AuthenticatedAssignmentsIdRoute: typeof AuthenticatedAssignmentsIdRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedManageRouteRoute: AuthenticatedManageRouteRouteWithChildren,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedResourcesRoute: AuthenticatedResourcesRoute,
+  AuthenticatedAssignmentsIdRoute: AuthenticatedAssignmentsIdRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
