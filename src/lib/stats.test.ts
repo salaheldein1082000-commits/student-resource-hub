@@ -13,6 +13,6 @@ describe("stats", () => {
       { criterion_code: "A.M1", achieved: false },
     ]);
     expect(r["A.P1"]).toEqual({ achieved: 1, total: 2, pct: 50 });
-    expect(r["A.M1"].pct).toBe(0);
+    expect(r["A.M1"]?.pct).toBe(0);
   });
 });

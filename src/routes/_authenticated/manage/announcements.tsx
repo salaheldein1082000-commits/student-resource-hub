@@ -38,7 +38,7 @@ function Announcements() {
     const { error } = await supabase.from("announcements").insert({
       title, body: body || null, kind, expires_at: expires ? new Date(expires).toISOString() : null,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setTitle(""); setBody(""); setExpires("");
     refresh();
   }
