@@ -16,6 +16,9 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedManageRouteRouteImport } from './routes/_authenticated/manage/route'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated/resources'
 import { Route as AuthenticatedAssignmentsIdRouteImport } from './routes/_authenticated/assignments.$id'
+import { Route as AuthenticatedManageAnnouncementsRouteImport } from './routes/_authenticated/manage/announcements'
+import { Route as AuthenticatedManageResourcesRouteImport } from './routes/_authenticated/manage/resources'
+import { Route as AuthenticatedManageSnippetsRouteImport } from './routes/_authenticated/manage/snippets'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -53,40 +56,83 @@ const AuthenticatedAssignmentsIdRoute =
     path: '/assignments/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedManageAnnouncementsRoute =
+  AuthenticatedManageAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
+  } as any)
+const AuthenticatedManageResourcesRoute =
+  AuthenticatedManageResourcesRouteImport.update({
+    id: '/resources',
+    path: '/resources',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
+  } as any)
+const AuthenticatedManageSnippetsRoute =
+  AuthenticatedManageSnippetsRouteImport.update({
+    id: '/snippets',
+    path: '/snippets',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/manage': typeof AuthenticatedManageRouteRoute
+  '/manage': typeof AuthenticatedManageRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/resources': typeof AuthenticatedResourcesRoute
   '/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
+  '/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
+  '/manage/resources': typeof AuthenticatedManageResourcesRoute
+  '/manage/snippets': typeof AuthenticatedManageSnippetsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/manage': typeof AuthenticatedManageRouteRoute
+  '/manage': typeof AuthenticatedManageRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/resources': typeof AuthenticatedResourcesRoute
   '/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
+  '/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
+  '/manage/resources': typeof AuthenticatedManageResourcesRoute
+  '/manage/snippets': typeof AuthenticatedManageSnippetsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/_authenticated/manage': typeof AuthenticatedManageRouteRoute
+  '/_authenticated/manage': typeof AuthenticatedManageRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/resources': typeof AuthenticatedResourcesRoute
   '/_authenticated/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
+  '/_authenticated/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
+  '/_authenticated/manage/resources': typeof AuthenticatedManageResourcesRoute
+  '/_authenticated/manage/snippets': typeof AuthenticatedManageSnippetsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/manage' | '/dashboard' | '/resources' | '/assignments/$id'
+    | '/'
+    | '/auth'
+    | '/manage'
+    | '/dashboard'
+    | '/resources'
+    | '/assignments/$id'
+    | '/manage/announcements'
+    | '/manage/resources'
+    | '/manage/snippets'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/auth' | '/manage' | '/dashboard' | '/resources' | '/assignments/$id'
+    | '/'
+    | '/auth'
+    | '/manage'
+    | '/dashboard'
+    | '/resources'
+    | '/assignments/$id'
+    | '/manage/announcements'
+    | '/manage/resources'
+    | '/manage/snippets'
   id:
     | '__root__'
     | '/'
@@ -96,6 +142,9 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/resources'
     | '/_authenticated/assignments/$id'
+    | '/_authenticated/manage/announcements'
+    | '/_authenticated/manage/resources'
+    | '/_authenticated/manage/snippets'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -155,18 +204,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAssignmentsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manage/announcements': {
+      id: '/_authenticated/manage/announcements'
+      path: '/announcements'
+      fullPath: '/manage/announcements'
+      preLoaderRoute: typeof AuthenticatedManageAnnouncementsRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
+    }
+    '/_authenticated/manage/resources': {
+      id: '/_authenticated/manage/resources'
+      path: '/resources'
+      fullPath: '/manage/resources'
+      preLoaderRoute: typeof AuthenticatedManageResourcesRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
+    }
+    '/_authenticated/manage/snippets': {
+      id: '/_authenticated/manage/snippets'
+      path: '/snippets'
+      fullPath: '/manage/snippets'
+      preLoaderRoute: typeof AuthenticatedManageSnippetsRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
+    }
   }
 }
 
+interface AuthenticatedManageRouteRouteChildren {
+  AuthenticatedManageAnnouncementsRoute: typeof AuthenticatedManageAnnouncementsRoute
+  AuthenticatedManageResourcesRoute: typeof AuthenticatedManageResourcesRoute
+  AuthenticatedManageSnippetsRoute: typeof AuthenticatedManageSnippetsRoute
+}
+
+const AuthenticatedManageRouteRouteChildren: AuthenticatedManageRouteRouteChildren =
+  {
+    AuthenticatedManageAnnouncementsRoute:
+      AuthenticatedManageAnnouncementsRoute,
+    AuthenticatedManageResourcesRoute: AuthenticatedManageResourcesRoute,
+    AuthenticatedManageSnippetsRoute: AuthenticatedManageSnippetsRoute,
+  }
+
+const AuthenticatedManageRouteRouteWithChildren =
+  AuthenticatedManageRouteRoute._addFileChildren(
+    AuthenticatedManageRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedManageRouteRoute: typeof AuthenticatedManageRouteRoute
+  AuthenticatedManageRouteRoute: typeof AuthenticatedManageRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRoute
   AuthenticatedAssignmentsIdRoute: typeof AuthenticatedAssignmentsIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedManageRouteRoute: AuthenticatedManageRouteRoute,
+  AuthenticatedManageRouteRoute: AuthenticatedManageRouteRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedResourcesRoute: AuthenticatedResourcesRoute,
   AuthenticatedAssignmentsIdRoute: AuthenticatedAssignmentsIdRoute,
