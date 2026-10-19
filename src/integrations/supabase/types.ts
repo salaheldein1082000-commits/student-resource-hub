@@ -14,16 +14,406 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      announcements: {
+        Row: {
+          body: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_published: boolean
+          kind: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_published?: boolean
+          kind?: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_published?: boolean
+          kind?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      assignments: {
+        Row: {
+          brief: string | null
+          created_at: string
+          criteria_codes: string[]
+          due_date: string | null
+          id: string
+          is_published: boolean
+          learning_aim: string | null
+          title: string
+          unit_no: number
+          updated_at: string
+        }
+        Insert: {
+          brief?: string | null
+          created_at?: string
+          criteria_codes?: string[]
+          due_date?: string | null
+          id?: string
+          is_published?: boolean
+          learning_aim?: string | null
+          title: string
+          unit_no?: number
+          updated_at?: string
+        }
+        Update: {
+          brief?: string | null
+          created_at?: string
+          criteria_codes?: string[]
+          due_date?: string | null
+          id?: string
+          is_published?: boolean
+          learning_aim?: string | null
+          title?: string
+          unit_no?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      attempts: {
+        Row: {
+          assessed_at: string | null
+          assessed_by: string | null
+          attempt_no: number
+          declaration_accepted: boolean
+          declared_at: string
+          feedback: string | null
+          file_name: string
+          file_path: string
+          id: string
+          note: string | null
+          submission_id: string
+          submitted_at: string
+        }
+        Insert: {
+          assessed_at?: string | null
+          assessed_by?: string | null
+          attempt_no: number
+          declaration_accepted: boolean
+          declared_at: string
+          feedback?: string | null
+          file_name: string
+          file_path: string
+          id?: string
+          note?: string | null
+          submission_id: string
+          submitted_at?: string
+        }
+        Update: {
+          assessed_at?: string | null
+          assessed_by?: string | null
+          attempt_no?: number
+          declaration_accepted?: boolean
+          declared_at?: string
+          feedback?: string | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          note?: string | null
+          submission_id?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attempts_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      criteria: {
+        Row: {
+          code: string
+          description: string
+          grade: string
+          learning_aim: string
+          sort_order: number
+          unit_no: number
+        }
+        Insert: {
+          code: string
+          description: string
+          grade: string
+          learning_aim: string
+          sort_order?: number
+          unit_no?: number
+        }
+        Update: {
+          code?: string
+          description?: string
+          grade?: string
+          learning_aim?: string
+          sort_order?: number
+          unit_no?: number
+        }
+        Relationships: []
+      }
+      criterion_results: {
+        Row: {
+          achieved: boolean
+          attempt_id: string
+          comment: string | null
+          criterion_code: string
+        }
+        Insert: {
+          achieved?: boolean
+          attempt_id: string
+          comment?: string | null
+          criterion_code: string
+        }
+        Update: {
+          achieved?: boolean
+          attempt_id?: string
+          comment?: string | null
+          criterion_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "criterion_results_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "criterion_results_criterion_code_fkey"
+            columns: ["criterion_code"]
+            isOneToOne: false
+            referencedRelation: "criteria"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      feedback_snippets: {
+        Row: {
+          body: string
+          created_at: string
+          criterion_code: string | null
+          id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          criterion_code?: string | null
+          id?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          criterion_code?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_snippets_criterion_code_fkey"
+            columns: ["criterion_code"]
+            isOneToOne: false
+            referencedRelation: "criteria"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      resource_views: {
+        Row: {
+          id: string
+          resource_id: string
+          student_id: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          resource_id: string
+          student_id: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          resource_id?: string
+          student_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_views_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_views_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resources: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_pinned: boolean
+          is_published: boolean
+          learning_aim: string
+          linked_criteria: string[]
+          sort_order: number
+          title: string
+          type: string
+          unit_no: number
+          updated_at: string
+          url: string
+          visible_from: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_pinned?: boolean
+          is_published?: boolean
+          learning_aim: string
+          linked_criteria?: string[]
+          sort_order?: number
+          title: string
+          type: string
+          unit_no?: number
+          updated_at?: string
+          url: string
+          visible_from?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_pinned?: boolean
+          is_published?: boolean
+          learning_aim?: string
+          linked_criteria?: string[]
+          sort_order?: number
+          title?: string
+          type?: string
+          unit_no?: number
+          updated_at?: string
+          url?: string
+          visible_from?: string | null
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          assignment_id: string
+          created_at: string
+          id: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "assessor" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +540,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["assessor", "student"],
+    },
   },
 } as const
