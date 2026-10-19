@@ -12,12 +12,13 @@ export const Route = createFileRoute("/auth")({
       { title: "Sign in — Unit 1 Studio" },
       {
         name: "description",
-        content: "Sign in with your student code to access Unit 1 coursework and resources.",
+        content:
+          "Sign in with your student code or assessor account to access Unit 1 coursework and resources.",
       },
       { property: "og:title", content: "Sign in — Unit 1 Studio" },
       {
         property: "og:description",
-        content: "Sign in with your student code to access Unit 1 coursework.",
+        content: "Sign in with your student code or assessor account to access Unit 1 coursework.",
       },
     ],
   }),
@@ -27,6 +28,8 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [isAssessor, setIsAssessor] = useState(false);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -43,8 +46,13 @@ function AuthPage() {
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalizedCode = code.trim();
-    if (!/^\d{8}$/.test(normalizedCode)) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!isAssessor && !/^\d{8}$/.test(normalizedCode)) {
       toast.error("Enter your 8-digit student code.");
+      return;
+    }
+    if (isAssessor && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      toast.error("Enter a valid assessor email address.");
       return;
     }
     if (!password) {
@@ -54,11 +62,15 @@ function AuthPage() {
 
     setBusy(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email: `${normalizedCode}@student.local`,
+      email: isAssessor ? normalizedEmail : `${normalizedCode}@student.local`,
       password,
     });
     if (error) {
-      toast.error("Student code or password is incorrect.");
+      toast.error(
+        isAssessor
+          ? "Assessor email or password is incorrect."
+          : "Student code or password is incorrect.",
+      );
       setBusy(false);
     }
   }
@@ -69,19 +81,43 @@ function AuthPage() {
         <div className="text-center">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">Unit 1 Studio</p>
           <h1 className="mt-3 text-3xl font-bold">Welcome back</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Sign in with your student code.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {isAssessor ? "Sign in with your assessor account." : "Sign in with your student code."}
+          </p>
         </div>
         <form onSubmit={signIn} className="mt-8 space-y-4">
+          <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setIsAssessor(false)}
+              className={`rounded-md px-3 py-2 text-sm font-medium ${!isAssessor ? "bg-card shadow-sm" : "text-muted-foreground"}`}
+            >
+              Student
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsAssessor(true)}
+              className={`rounded-md px-3 py-2 text-sm font-medium ${isAssessor ? "bg-card shadow-sm" : "text-muted-foreground"}`}
+            >
+              Assessor
+            </button>
+          </div>
           <div className="space-y-2">
-            <Label htmlFor="student-code">Student code</Label>
+            <Label htmlFor="login-identifier">
+              {isAssessor ? "Assessor email" : "Student code"}
+            </Label>
             <Input
-              id="student-code"
-              inputMode="numeric"
+              id="login-identifier"
+              inputMode={isAssessor ? "email" : "numeric"}
               autoComplete="username"
-              maxLength={8}
-              placeholder="e.g. 01090680"
-              value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
+              maxLength={isAssessor ? 254 : 8}
+              placeholder={isAssessor ? "name@school.edu" : "e.g. 01090680"}
+              value={isAssessor ? email : code}
+              onChange={(event) =>
+                isAssessor
+                  ? setEmail(event.target.value)
+                  : setCode(event.target.value.replace(/\D/g, ""))
+              }
             />
           </div>
           <div className="space-y-2">
