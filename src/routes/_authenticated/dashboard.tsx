@@ -27,7 +27,7 @@ function Dashboard() {
   return me.role === "assessor" ? <AssessorDash /> : <StudentDash name={me.name} />;
 }
 
-export function statusOf(s?: SubmissionFull) {
+function statusOf(s?: SubmissionFull) {
   if (!s) return { label: "Not submitted", cls: "border-dashed" };
   const a = latestAttempt(s);
   if (!a?.assessed_at) return { label: "Awaiting feedback", cls: "bg-secondary text-secondary-foreground" };
