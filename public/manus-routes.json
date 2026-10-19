@@ -1,0 +1,14 @@
+{
+  "routes": [
+    { "path": "/", "title": "Unit 1 Studio" },
+    { "path": "/auth", "title": "Sign in" },
+    { "path": "/dashboard", "title": "Dashboard" },
+    { "path": "/resources", "title": "Resources" },
+    { "path": "/assignments/:id", "title": "Assignment" },
+    { "path": "/manage/assignments", "title": "Manage assignments" },
+    { "path": "/manage/resources", "title": "Manage resources" },
+    { "path": "/manage/announcements", "title": "Manage announcements" },
+    { "path": "/manage/snippets", "title": "Feedback bank" },
+    { "path": "/manage/submissions/:id", "title": "Mark submission" }
+  ]
+}

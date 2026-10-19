@@ -28,6 +28,13 @@ EXTRAS
 
 This project was built with [Lovable](https://lovable.dev).
 
+## Authentication
+
+Students sign in with an 8-digit student code and password. The app maps the code to Supabase
+Auth's internal email alias format (`<student-code>@student.local`), so students only see and
+enter their code. The migration seeds the development account `01090680` with the requested
+password; change it before using the project with real students.
+
 ## Build with Lovable
 
 Continue developing this project in the [Lovable editor](https://lovable.dev/projects/22d62a82-dd32-42ad-8541-c4d7a22223c3).
