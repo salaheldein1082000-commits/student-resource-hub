@@ -44,7 +44,7 @@ function ManageResources() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["resources"] });
 
   async function save() {
-    if (!draft?.title || !draft.url) return toast.error("Title and URL are required");
+    if (!draft?.title || !draft.url) { toast.error("Title and URL are required"); return; }
     const row = {
       title: draft.title, url: draft.url, type: draft.type!, learning_aim: draft.learning_aim!,
       description: draft.description || null, linked_criteria: draft.linked_criteria ?? [],
@@ -53,7 +53,7 @@ function ManageResources() {
       sort_order: draft.sort_order ?? (list.length ? Math.max(...list.map((r) => r.sort_order)) + 1 : 0),
     };
     const res = draft.id ? await supabase.from("resources").update(row).eq("id", draft.id) : await supabase.from("resources").insert(row);
-    if (res.error) return toast.error(res.error.message);
+    if (res.error) { toast.error(res.error.message); return; }
     toast.success("Saved");
     setDraft(null);
     refresh();
@@ -67,7 +67,7 @@ function ManageResources() {
 
   async function move(aimList: Resource[], i: number, dir: -1 | 1) {
     const a = aimList[i], b = aimList[i + dir];
-    if (!b) return;
+    if (!a || !b) return;
     await Promise.all([
       supabase.from("resources").update({ sort_order: b.sort_order }).eq("id", a.id),
       supabase.from("resources").update({ sort_order: a.sort_order === b.sort_order ? a.sort_order + dir : a.sort_order }).eq("id", b.id),
@@ -132,13 +132,13 @@ function ManageResources() {
               <div><Label>Title</Label><Input value={draft.title ?? ""} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Type</Label>
-                  <Select value={draft.type} onValueChange={(v) => setDraft({ ...draft, type: v })}>
+                  <Select value={draft.type ?? "video"} onValueChange={(v) => setDraft({ ...draft, type: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{RESOURCE_TYPES.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div><Label>Learning aim</Label>
-                  <Select value={draft.learning_aim} onValueChange={(v) => setDraft({ ...draft, learning_aim: v })}>
+                  <Select value={draft.learning_aim ?? "A"} onValueChange={(v) => setDraft({ ...draft, learning_aim: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{aims.map((a) => <SelectItem key={a} value={a}>Aim {a}</SelectItem>)}</SelectContent>
                   </Select>
