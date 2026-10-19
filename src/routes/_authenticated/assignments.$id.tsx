@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/assignments/$id")({
   component: AssignmentPage,
 });
 
-export const DECLARATION =
+const DECLARATION =
   "I confirm that this work is my own. Where I have used sources or help, I have clearly referenced them. I understand that submitting someone else's work is malpractice.";
 
 function AssignmentPage() {
