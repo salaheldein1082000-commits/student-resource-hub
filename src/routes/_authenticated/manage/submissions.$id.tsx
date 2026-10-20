@@ -22,7 +22,7 @@ import {
 export const Route = createFileRoute("/_authenticated/manage/submissions/$id")({
   head: () => ({
     meta: [
-      { title: "Assess submission — BTEC Assessment Portal" },
+      { title: "Assess submission — Unit 1 IT Infrastructure" },
       { name: "description", content: "Review, grade and publish criterion-based feedback." },
     ],
   }),

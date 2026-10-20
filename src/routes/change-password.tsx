@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/change-password")({
   ssr: false,
   head: () => ({
-    meta: [{ title: "BTEC Assessment Portal" }],
+    meta: [{ title: "Unit 1 IT Infrastructure" }],
   }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();

@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/auth";
 import { useLocale } from "@/lib/locale";
+import logo from "@/assets/unit1-logo.png.asset.json";
 
 const linkCls =
   "flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
@@ -40,8 +41,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <aside className="flex shrink-0 flex-col bg-sidebar p-4 text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-64">
-        <Link to="/dashboard" className="px-3 py-2 font-display text-lg font-bold">
-          BTEC Assessment Portal
+        <Link to="/dashboard" className="block px-3 py-2">
+          <img
+            src={logo.url}
+            alt="Unit 1 IT Infrastructure"
+            className="h-12 w-auto rounded-md bg-card p-1"
+          />
+          <span className="mt-2 block font-display text-lg font-bold">BTEC Assessment Portal</span>
         </Link>
         <p className="px-3 text-xs text-sidebar-foreground/70">
           Elsewedy Technical Academy · Unit 1
