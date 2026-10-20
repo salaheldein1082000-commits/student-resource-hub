@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -15,8 +15,13 @@ import {
 
 export const Route = createFileRoute("/_authenticated/manage/submissions")({
   head: () => ({ meta: [{ title: "Submissions — BTEC Assessment Portal" }] }),
-  component: SubmissionList,
+  component: SubmissionRoute,
 });
+
+function SubmissionRoute() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  return pathname.replace(/\/$/, "") === "/manage/submissions" ? <SubmissionList /> : <Outlet />;
+}
 
 function SubmissionList() {
   const { t } = useLocale();
