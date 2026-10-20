@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLocale } from "@/lib/locale";
 import { isValidStudentCode, needsInitialPasswordChange } from "@/lib/studentCode";
-import logo from "@/assets/unit1-logo.png.asset.json";
+import logo from "@/assets/unit1-logo.webp.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

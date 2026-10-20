@@ -6,7 +6,8 @@ import { needsInitialPasswordChange } from "@/lib/studentCode";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
+    const { data: s } = await supabase.auth.getSession();
+    const data = { user: s.session?.user };
     if (!data.user) throw redirect({ to: "/auth" });
     if (needsInitialPasswordChange(data.user.app_metadata)) {
       throw redirect({ to: "/change-password" });

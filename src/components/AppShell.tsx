@@ -16,7 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/auth";
 import { useLocale } from "@/lib/locale";
-import logo from "@/assets/unit1-logo.png.asset.json";
+import logo from "@/assets/unit1-logo.webp.asset.json";
 
 const linkCls =
   "flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";

@@ -15,9 +15,9 @@ export type Me = {
 export const meQuery = queryOptions({
   queryKey: ["me"],
   queryFn: async (): Promise<Me | null> => {
-    const { data, error } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
-    const user = data.user;
+    const user = data.session?.user;
     if (!user) return null;
 
     const { data: profile, error: profileError } = await portalDb
@@ -54,7 +54,7 @@ export const meQuery = queryOptions({
       groupName: profile?.group_name ?? null,
     };
   },
-  staleTime: 60_000,
+  staleTime: 5 * 60_000,
 });
 
 export function useMe() {
