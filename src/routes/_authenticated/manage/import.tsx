@@ -22,8 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/AppShell";
+import { isValidStudentCode } from "@/lib/studentCode";
 
-const MAX_IMPORT_ROWS = 20;
+const MAX_IMPORT_ROWS = 21;
 const CSV_HEADERS = ["student_code", "full_name"] as const;
 
 type StudentRow = {
@@ -144,7 +145,12 @@ function StudentImport() {
 
   const selectedClass = classes.find((item) => item.id === selectedClassId);
   const canSubmit = Boolean(
-    selectedClassId && studentRows.length > 0 && validationErrors.length === 0 && !isImporting,
+    selectedClassId &&
+    selectedClass &&
+    studentRows.length > 0 &&
+    studentRows.length <= selectedClass.capacity &&
+    validationErrors.length === 0 &&
+    !isImporting,
   );
 
   function resetImportPreview() {
@@ -184,8 +190,8 @@ function StudentImport() {
       for (const row of parsedRows) {
         if (row.fieldCount !== 2)
           errors.push(`Row ${row.rowNumber}: expected exactly two columns.`);
-        if (!/^\d{8}$/.test(row.student_code)) {
-          errors.push(`Row ${row.rowNumber}: student_code must contain exactly 8 digits.`);
+        if (!isValidStudentCode(row.student_code)) {
+          errors.push(`Row ${row.rowNumber}: student_code must contain exactly 6 digits.`);
         }
         if (row.full_name.length < 2 || row.full_name.length > 120) {
           errors.push(`Row ${row.rowNumber}: full_name must be between 2 and 120 characters.`);
@@ -250,7 +256,7 @@ function StudentImport() {
     const created = outcomes.filter((row) => row.created && row.temporary_password);
     if (created.length === 0) return;
     const lines = [
-      "student_code,full_name,temporary_password",
+      "student_code,full_name,initial_password",
       ...created.map((row) =>
         [row.student_code, row.full_name, row.temporary_password ?? ""].map(csvCell).join(","),
       ),
@@ -262,7 +268,7 @@ function StudentImport() {
     <div className="mx-auto max-w-5xl">
       <PageHeader
         title="Import students"
-        sub="Add up to 20 BTEC student accounts to a class from a CSV file."
+        sub="Add students to a class from a CSV file (up to that class’s capacity)."
       >
         <Button
           variant="outline"
@@ -275,9 +281,9 @@ function StudentImport() {
       <div className="mb-6 flex gap-3 rounded-xl border border-amber-300/70 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100">
         <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
         <p>
-          <strong>Handle temporary passwords securely.</strong> New student passwords are shown only
-          in this result and credentials download. Give them to students through an approved secure
-          channel, and do not email or post this file.
+          <strong>Initial passwords equal student codes.</strong> This is a weak temporary password.
+          Students must choose a private password of at least 12 characters before they can open the
+          portal. Share codes only through an approved secure channel.
         </p>
       </div>
 
@@ -329,7 +335,7 @@ function StudentImport() {
             <p className="mt-1 text-sm text-muted-foreground">
               Required headers:{" "}
               <code className="rounded bg-muted px-1">student_code,full_name</code>. Student codes
-              must be exactly 8 digits.
+              must be exactly 6 digits.
             </p>
             <input
               ref={fileInputRef}
@@ -392,7 +398,7 @@ function StudentImport() {
             <li>
               • Use one header row: <code>student_code,full_name</code>
             </li>
-            <li>• Use an 8-digit student code, including leading zeroes.</li>
+            <li>• Use a 6-digit student code.</li>
             <li>• Use the student&apos;s full name (2–120 characters).</li>
             <li>• Keep the file to 20 rows or fewer.</li>
             <li>• Duplicate codes and invalid rows are blocked before submission.</li>
@@ -411,7 +417,7 @@ function StudentImport() {
                 Import results
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Passwords are displayed only for newly created accounts.
+                The initial password is the student code; existing passwords are never reset.
               </p>
             </div>
             {outcomes.some((row) => row.created && row.temporary_password) && (
@@ -426,7 +432,7 @@ function StudentImport() {
                 <tr>
                   <th className="px-3 py-2">Student</th>
                   <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Temporary password</th>
+                  <th className="px-3 py-2">Initial password</th>
                   <th className="px-3 py-2">Details</th>
                 </tr>
               </thead>
@@ -459,7 +465,7 @@ function StudentImport() {
                     <td className="px-3 py-3 text-muted-foreground">
                       {row.error ??
                         (row.created
-                          ? "Share securely, then ask the student to change it."
+                          ? "Initial password is the student code; a new private password is required at first sign-in."
                           : "Account assigned to the selected class; password unchanged.")}
                     </td>
                   </tr>
@@ -468,8 +474,8 @@ function StudentImport() {
             </table>
           </div>
           <p className="mt-4 text-sm font-medium text-amber-800 dark:text-amber-300">
-            Distribute any temporary passwords securely. They are not reset or shown for existing
-            accounts.
+            New accounts must change their code-based initial password at first sign-in. Existing
+            account passwords are never reset or shown.
           </p>
         </section>
       )}

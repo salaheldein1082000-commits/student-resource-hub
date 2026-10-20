@@ -2,6 +2,7 @@
   "routes": [
     { "path": "/", "title": "BTEC Assessment Portal" },
     { "path": "/auth", "title": "Sign in" },
+    { "path": "/change-password", "title": "Change your password" },
     { "path": "/dashboard", "title": "Dashboard" },
     { "path": "/resources", "title": "Resources" },
     { "path": "/assignments/:id", "title": "Assignment" },

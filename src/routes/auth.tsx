@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLocale } from "@/lib/locale";
+import { isValidStudentCode, needsInitialPasswordChange } from "@/lib/studentCode";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -36,10 +37,24 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard", replace: true });
+      if (data.session) {
+        navigate({
+          to: needsInitialPasswordChange(data.session.user.app_metadata)
+            ? "/change-password"
+            : "/dashboard",
+          replace: true,
+        });
+      }
     });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) navigate({ to: "/dashboard", replace: true });
+      if (session) {
+        navigate({
+          to: needsInitialPasswordChange(session.user.app_metadata)
+            ? "/change-password"
+            : "/dashboard",
+          replace: true,
+        });
+      }
     });
     return () => data.subscription.unsubscribe();
   }, [navigate]);
@@ -48,8 +63,8 @@ function AuthPage() {
     event.preventDefault();
     const normalizedCode = code.trim();
     const normalizedEmail = email.trim().toLowerCase();
-    if (!isStaff && !/^\d{8}$/.test(normalizedCode)) {
-      toast.error("Enter your 8-digit student code.");
+    if (!isStaff && !isValidStudentCode(normalizedCode)) {
+      toast.error("Enter your 6-digit student code.");
       return;
     }
     if (isStaff && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
@@ -122,8 +137,8 @@ function AuthPage() {
               id="login-identifier"
               inputMode={isStaff ? "email" : "numeric"}
               autoComplete="username"
-              maxLength={isStaff ? 254 : 8}
-              placeholder={isStaff ? "name@school.edu" : "e.g. 01090680"}
+              maxLength={isStaff ? 254 : 6}
+              placeholder={isStaff ? "name@school.edu" : "e.g. 123456"}
               value={isStaff ? email : code}
               onChange={(event) =>
                 isStaff
