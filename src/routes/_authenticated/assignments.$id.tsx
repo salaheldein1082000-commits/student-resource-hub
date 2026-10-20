@@ -15,10 +15,10 @@ import { printFeedbackAsPdf } from "@/lib/feedbackPdf";
 import {
   getLatestAttempt,
   isExternalUrl,
+  openSubmissionFile,
   portalAssignmentsQuery,
   portalDb,
   portalSubmissionsQuery,
-  signedStorageUrl,
   submissionStatusLabel,
   type PortalAssignment,
   type PortalSubmission,
@@ -86,10 +86,11 @@ function AssignmentPage() {
   async function openBrief() {
     if (!assignment?.brief_pdf_url) return;
     try {
-      const url = isExternalUrl(assignment.brief_pdf_url)
-        ? assignment.brief_pdf_url
-        : await signedStorageUrl("briefs", assignment.brief_pdf_url);
-      window.open(url, "_blank", "noopener,noreferrer");
+      if (isExternalUrl(assignment.brief_pdf_url)) {
+        window.open(assignment.brief_pdf_url, "_blank", "noopener,noreferrer");
+      } else {
+        await openSubmissionFile("briefs", assignment.brief_pdf_url);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not open the brief.");
     }
@@ -97,8 +98,7 @@ function AssignmentPage() {
 
   async function downloadSubmission(item: PortalSubmission) {
     try {
-      const url = await signedStorageUrl("submissions", item.file_url);
-      window.open(url, "_blank", "noopener,noreferrer");
+      await openSubmissionFile("submissions", item.file_url);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not open the submission file.");
     }

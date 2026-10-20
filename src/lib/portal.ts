@@ -198,6 +198,19 @@ export async function signedStorageUrl(
   return data.signedUrl;
 }
 
+export async function openSubmissionFile(bucket: "submissions" | "briefs", path: string) {
+  const tab = window.open("about:blank", "_blank");
+  if (tab) tab.opener = null;
+  try {
+    const url = await signedStorageUrl(bucket, path);
+    if (tab && !tab.closed) tab.location.replace(url);
+    else window.location.assign(url);
+  } catch (error) {
+    tab?.close();
+    throw error;
+  }
+}
+
 export function isExternalUrl(value: string) {
   return /^https?:\/\//i.test(value);
 }

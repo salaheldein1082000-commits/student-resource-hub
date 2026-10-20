@@ -13,8 +13,8 @@ import { printFeedbackAsPdf } from "@/lib/feedbackPdf";
 import {
   portalAssignmentByIdQuery,
   portalDb,
+  openSubmissionFile,
   portalSubmissionByIdQuery,
-  portalSubmissionsQuery,
   signedStorageUrl,
   type PortalCriterion,
 } from "@/lib/portal";
@@ -336,8 +336,7 @@ function GradeSubmission() {
 
   async function downloadFile() {
     try {
-      const url = await signedStorageUrl("submissions", currentSubmission.file_url);
-      window.open(url, "_blank", "noopener,noreferrer");
+      await openSubmissionFile("submissions", currentSubmission.file_url);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not open the submission file.");
     }
