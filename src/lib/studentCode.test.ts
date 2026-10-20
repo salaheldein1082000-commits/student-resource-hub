@@ -15,9 +15,9 @@ describe("student code format", () => {
   });
 });
 
-describe("initial password routing", () => {
-  it("requires a password change only when the app metadata flag is true", () => {
-    expect(needsInitialPasswordChange({ must_change_password: true })).toBe(true);
+describe("permanent student-code password policy", () => {
+  it("never forces an initial password change, including for stale metadata", () => {
+    expect(needsInitialPasswordChange({ must_change_password: true })).toBe(false);
     expect(needsInitialPasswordChange({ must_change_password: false })).toBe(false);
     expect(needsInitialPasswordChange({})).toBe(false);
     expect(needsInitialPasswordChange(null)).toBe(false);

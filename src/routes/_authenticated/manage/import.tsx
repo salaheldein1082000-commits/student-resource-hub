@@ -253,15 +253,15 @@ function StudentImport() {
   }
 
   function downloadCredentials() {
-    const created = outcomes.filter((row) => row.created && row.temporary_password);
-    if (created.length === 0) return;
+    const credentialRows = outcomes.filter((row) => row.temporary_password);
+    if (credentialRows.length === 0) return;
     const lines = [
-      "student_code,full_name,initial_password",
-      ...created.map((row) =>
+      "student_code,full_name,password",
+      ...credentialRows.map((row) =>
         [row.student_code, row.full_name, row.temporary_password ?? ""].map(csvCell).join(","),
       ),
     ];
-    downloadCsv("student-credentials.csv", `${lines.join("\r\n")}\r\n`);
+    downloadCsv("student-login-credentials.csv", `${lines.join("\r\n")}\r\n`);
   }
 
   return (
@@ -281,9 +281,9 @@ function StudentImport() {
       <div className="mb-6 flex gap-3 rounded-xl border border-amber-300/70 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100">
         <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
         <p>
-          <strong>Initial passwords equal student codes.</strong> This is a weak temporary password.
-          Students must choose a private password of at least 12 characters before they can open the
-          portal. Share codes only through an approved secure channel.
+          <strong>Student codes remain the passwords.</strong> The portal does not require a
+          password change. Six-digit passwords are easy to guess, so share each code only through an
+          approved secure channel.
         </p>
       </div>
 
@@ -297,7 +297,8 @@ function StudentImport() {
               1. Choose a class
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Existing student accounts keep their password and are assigned to this class.
+              Each imported student account will use the student code as its password, including
+              accounts that already exist.
             </p>
           </div>
           <div className="space-y-2">
@@ -400,7 +401,9 @@ function StudentImport() {
             </li>
             <li>• Use a 6-digit student code.</li>
             <li>• Use the student&apos;s full name (2–120 characters).</li>
-            <li>• Keep the file to 20 rows or fewer.</li>
+            <li>
+              • Do not exceed the selected class&apos;s capacity (20, or 21 for the 21-seat class).
+            </li>
             <li>• Duplicate codes and invalid rows are blocked before submission.</li>
           </ul>
         </aside>
@@ -417,12 +420,12 @@ function StudentImport() {
                 Import results
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                The initial password is the student code; existing passwords are never reset.
+                Every imported student uses their six-digit code as the password.
               </p>
             </div>
-            {outcomes.some((row) => row.created && row.temporary_password) && (
+            {outcomes.some((row) => row.temporary_password) && (
               <Button variant="outline" onClick={downloadCredentials}>
-                <Download className="mr-2 h-4 w-4" /> Download credentials CSV
+                <Download className="mr-2 h-4 w-4" /> Download student login CSV
               </Button>
             )}
           </div>
@@ -432,7 +435,7 @@ function StudentImport() {
                 <tr>
                   <th className="px-3 py-2">Student</th>
                   <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Initial password</th>
+                  <th className="px-3 py-2">Password</th>
                   <th className="px-3 py-2">Details</th>
                 </tr>
               </thead>
@@ -455,18 +458,16 @@ function StudentImport() {
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-muted-foreground">
-                          <CheckCircle2 className="h-4 w-4" /> Already existed
+                          <CheckCircle2 className="h-4 w-4" /> Existing, password set
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-3 font-mono">
-                      {row.created && row.temporary_password ? row.temporary_password : "—"}
-                    </td>
+                    <td className="px-3 py-3 font-mono">{row.temporary_password ?? "—"}</td>
                     <td className="px-3 py-3 text-muted-foreground">
                       {row.error ??
                         (row.created
-                          ? "Initial password is the student code; a new private password is required at first sign-in."
-                          : "Account assigned to the selected class; password unchanged.")}
+                          ? "New account created; the student code remains its password."
+                          : "Existing student account assigned to this class; password set to the student code.")}
                     </td>
                   </tr>
                 ))}
@@ -474,8 +475,7 @@ function StudentImport() {
             </table>
           </div>
           <p className="mt-4 text-sm font-medium text-amber-800 dark:text-amber-300">
-            New accounts must change their code-based initial password at first sign-in. Existing
-            account passwords are never reset or shown.
+            No first-login password change is required. The student code is the account password.
           </p>
         </section>
       )}

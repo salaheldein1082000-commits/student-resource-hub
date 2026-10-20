@@ -4,8 +4,9 @@ export function isValidStudentCode(value: string): boolean {
   return STUDENT_CODE_PATTERN.test(value);
 }
 
+/** Student codes remain the portal password; the app never forces an initial rotation. */
 export function needsInitialPasswordChange(
-  appMetadata: Record<string, unknown> | null | undefined,
+  _appMetadata: Record<string, unknown> | null | undefined,
 ): boolean {
-  return appMetadata?.["must_change_password"] === true;
+  return false;
 }
