@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLocale } from "@/lib/locale";
 import { isValidStudentCode, needsInitialPasswordChange } from "@/lib/studentCode";
+import logo from "@/assets/unit1-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -104,6 +105,7 @@ function AuthPage() {
           </button>
         </div>
         <div className="text-center">
+          <img src={logo.url} alt="Unit 1 IT Infrastructure" className="mx-auto mb-4 h-16 w-auto" />
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">
             BTEC Assessment Portal
           </p>
