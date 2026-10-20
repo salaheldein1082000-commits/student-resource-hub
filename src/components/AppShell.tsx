@@ -45,9 +45,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <img
             src={logoUrl}
             alt="Unit 1 IT Infrastructure"
-            className="h-12 w-auto rounded-md bg-card p-1"
+            className="h-12 w-full rounded-lg bg-card object-contain p-1.5"
           />
-          <span className="mt-2 block font-display text-lg font-bold">BTEC Assessment Portal</span>
+          <span className="mt-3 block font-display text-base font-semibold">BTEC Assessment Portal</span>
         </Link>
         <p className="px-3 text-xs text-sidebar-foreground/70">
           Elsewedy Technical Academy · Unit 1
@@ -137,7 +137,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 px-5 py-8 md:px-10">{children}</main>
+      <main className="min-w-0 flex-1 bg-background px-5 py-8 md:px-10 lg:px-14">{children}</main>
     </div>
   );
 }
@@ -152,9 +152,9 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b pb-5">
       <div>
-        <h1 className="text-3xl font-bold md:text-4xl">{title}</h1>
+        <h1 className="text-2xl font-semibold md:text-3xl">{title}</h1>
         {sub && <p className="mt-1 text-muted-foreground">{sub}</p>}
       </div>
       {children}
