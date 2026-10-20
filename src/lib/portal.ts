@@ -97,6 +97,22 @@ export const portalProfilesQuery = queryOptions({
     ),
 });
 
+export type PortalStudent = Pick<PortalProfile, "id" | "full_name" | "group_name" | "class_id">;
+
+export const portalStudentsQuery = (userId: string | null) =>
+  queryOptions({
+    queryKey: ["portal", "students", userId],
+    enabled: Boolean(userId),
+    queryFn: async (): Promise<PortalStudent[]> =>
+      unwrap(
+        await portalDb
+          .from("profiles")
+          .select("id, full_name, group_name, class_id")
+          .eq("role", "student")
+          .order("full_name"),
+      ),
+  });
+
 export const portalAssignmentsQuery = queryOptions({
   queryKey: ["portal", "assignments"],
   queryFn: async (): Promise<PortalAssignment[]> => {

@@ -57,13 +57,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             <BookOpen className="h-4 w-4" /> {t("resources")}
           </Link>
           {isStaff && (
-            <Link
-              to="/manage/submissions"
-              className={linkCls}
-              activeProps={{ className: activeCls }}
-            >
-              <ClipboardCheck className="h-4 w-4" /> {t("submissions")}
-            </Link>
+            <>
+              <Link
+                to="/manage/submissions"
+                className={linkCls}
+                activeProps={{ className: activeCls }}
+              >
+                <ClipboardCheck className="h-4 w-4" /> {t("submissions")}
+              </Link>
+              <Link to="/students" className={linkCls} activeProps={{ className: activeCls }}>
+                <Users className="h-4 w-4" /> {isEngineer ? t("myStudents") : t("studentRoster")}
+              </Link>
+            </>
           )}
           {isLeader && (
             <>

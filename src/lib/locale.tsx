@@ -44,6 +44,16 @@ type MessageKey =
   | "capacity"
   | "enrollment"
   | "unassigned"
+  | "myStudents"
+  | "studentRoster"
+  | "studentsInYourClasses"
+  | "studentsAcrossClasses"
+  | "assignedClasses"
+  | "studentName"
+  | "searchStudents"
+  | "noStudentsFound"
+  | "noClassesAssigned"
+  | "studentRosterError"
   | "rename"
   | "upload"
   | "preview"
@@ -112,6 +122,16 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
     capacity: "Capacity",
     enrollment: "Enrolled",
     unassigned: "Unassigned",
+    myStudents: "My students",
+    studentRoster: "Student roster",
+    studentsInYourClasses: "Students enrolled in your assigned classes.",
+    studentsAcrossClasses: "Students grouped by class across the academy.",
+    assignedClasses: "Assigned classes",
+    studentName: "Student name",
+    searchStudents: "Search students by name…",
+    noStudentsFound: "No students match this class or search.",
+    noClassesAssigned: "No classes have been assigned to your account yet.",
+    studentRosterError: "Unable to load the student roster. Please try again.",
     rename: "Rename",
     upload: "Upload",
     preview: "Preview",
@@ -179,6 +199,16 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
     capacity: "السعة",
     enrollment: "عدد المسجلين",
     unassigned: "غير معيّن",
+    myStudents: "طلابي",
+    studentRoster: "قائمة الطلاب",
+    studentsInYourClasses: "الطلاب المسجلون في الفصول المعيّنة لك.",
+    studentsAcrossClasses: "الطلاب موزعون حسب الفصول في الأكاديمية.",
+    assignedClasses: "الفصول المعيّنة",
+    studentName: "اسم الطالب",
+    searchStudents: "ابحث عن الطلاب بالاسم…",
+    noStudentsFound: "لا يوجد طلاب يطابقون هذا الفصل أو البحث.",
+    noClassesAssigned: "لم يتم تعيين فصول لحسابك بعد.",
+    studentRosterError: "تعذر تحميل قائمة الطلاب. يرجى المحاولة مرة أخرى.",
     rename: "إعادة تسمية",
     upload: "رفع",
     preview: "معاينة",
