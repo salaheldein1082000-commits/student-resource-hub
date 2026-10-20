@@ -65,7 +65,7 @@ export type PortalSubmission = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const portalDb = supabase as unknown as SupabaseClient<any>;
 
-function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
+function unwrap<T>(result: { data: unknown; error: { message: string } | null }): T {
   if (result.error) throw new Error(result.error.message);
   return result.data as T;
 }
@@ -161,7 +161,7 @@ export const portalAssignmentByIdQuery = (assignmentId: string | null) =>
 export const portalSubmissionsQuery = queryOptions({
   queryKey: ["portal", "submissions"],
   queryFn: async (): Promise<PortalSubmission[]> =>
-    unwrap(
+    unwrap<PortalSubmission[]>(
       await portalDb
         .from("submissions")
         .select(
