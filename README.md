@@ -1,6 +1,6 @@
 # BTEC Assessment Portal
 
-For Unit 1, _IT Systems — Strategy, Management and Infrastructure_, at Elsewedy Technical Academy (Pearson BTEC Level 3 Extended Diploma in IT). This project is connected to Lovable; commits pushed to `main` sync back to the editor.
+For Unit 1, _IT Systems — Strategy, Management and Infrastructure_, at Elsewedy Technical Academy (Pearson BTEC Level 3 Extended Diploma in IT). The frontend is a standard React 19 + Vite single-page application with TanStack Router and React Query. It is configured for static hosting on Vercel; Supabase remains the Auth, Postgres, and private Storage backend.
 
 ## Portal features
 
@@ -32,6 +32,15 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
+## Deploy to Vercel
+
+Import this GitHub repository in Vercel and use the Vite preset. Vercel reads `vercel.json`: `pnpm build` produces static files in `dist`, and the rewrite serves the SPA for nested routes. Set these browser-safe build environment variables in the Vercel project for Production, Preview, and Development:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+Use the Supabase publishable/anon key only; never set a service-role key as a `VITE_` variable. The app relies on Supabase RLS for authorization. After deployment, configure the deployed origin in Supabase Auth URL settings and test direct refreshes on `/manage/submissions/<submission-id>`.
+
 Tests and production checks:
 
 ```sh
@@ -46,4 +55,4 @@ pnpm build
 - The Unit Leader can manage resources, announcements, and reusable feedback snippets.
 - Existing resources, announcements, attempts, and legacy assessment records are retained during portal migration.
 
-This project was built with [Lovable](https://lovable.dev). Continue developing in the connected Lovable project; push tested commits to `main` and never rewrite published history.
+The project uses standard Vite commands and can be developed or deployed independently of Lovable.
