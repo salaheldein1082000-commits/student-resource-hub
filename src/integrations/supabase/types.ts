@@ -44,40 +44,82 @@ export type Database = {
         }
         Relationships: []
       }
+      assignment_classes: {
+        Row: {
+          assigned_at: string
+          assignment_id: string
+          class_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assignment_id: string
+          class_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assignment_id?: string
+          class_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_classes_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_classes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assignments: {
         Row: {
           brief: string | null
+          brief_pdf_url: string | null
           created_at: string
           criteria_codes: string[]
           due_date: string | null
           id: string
           is_published: boolean
           learning_aim: string | null
+          part: number
           title: string
+          total_parts: number
           unit_no: number
           updated_at: string
         }
         Insert: {
           brief?: string | null
+          brief_pdf_url?: string | null
           created_at?: string
           criteria_codes?: string[]
           due_date?: string | null
           id?: string
           is_published?: boolean
           learning_aim?: string | null
+          part?: number
           title: string
+          total_parts?: number
           unit_no?: number
           updated_at?: string
         }
         Update: {
           brief?: string | null
+          brief_pdf_url?: string | null
           created_at?: string
           criteria_codes?: string[]
           due_date?: string | null
           id?: string
           is_published?: boolean
           learning_aim?: string | null
+          part?: number
           title?: string
+          total_parts?: number
           unit_no?: number
           updated_at?: string
         }
@@ -136,32 +178,109 @@ export type Database = {
           },
         ]
       }
+      class_engineers: {
+        Row: {
+          assigned_at: string
+          class_id: string
+          engineer_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          class_id: string
+          engineer_id: string
+        }
+        Update: {
+          assigned_at?: string
+          class_id?: string
+          engineer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_engineers_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: true
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_engineers_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          capacity: number
+          created_at: string
+          id: string
+          name: string
+          unit_no: number
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          id?: string
+          name: string
+          unit_no?: number
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          id?: string
+          name?: string
+          unit_no?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       criteria: {
         Row: {
+          assignment_id: string | null
           code: string
           description: string
           grade: string
+          id: string
           learning_aim: string
           sort_order: number
+          task_no: number | null
           unit_no: number
         }
         Insert: {
+          assignment_id?: string | null
           code: string
           description: string
           grade: string
+          id?: string
           learning_aim: string
           sort_order?: number
+          task_no?: number | null
           unit_no?: number
         }
         Update: {
+          assignment_id?: string | null
           code?: string
           description?: string
           grade?: string
+          id?: string
           learning_aim?: string
           sort_order?: number
+          task_no?: number | null
           unit_no?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "criteria_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       criterion_results: {
         Row: {
@@ -190,13 +309,6 @@ export type Database = {
             referencedRelation: "attempts"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "criterion_results_criterion_code_fkey"
-            columns: ["criterion_code"]
-            isOneToOne: false
-            referencedRelation: "criteria"
-            referencedColumns: ["code"]
-          },
         ]
       }
       feedback_snippets: {
@@ -218,39 +330,125 @@ export type Database = {
           criterion_code?: string | null
           id?: string
         }
+        Relationships: []
+      }
+      feedback_summary: {
+        Row: {
+          assessor_name: string | null
+          general_comments: string | null
+          id: string
+          published: boolean
+          published_at: string | null
+          submission_id: string
+        }
+        Insert: {
+          assessor_name?: string | null
+          general_comments?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          submission_id: string
+        }
+        Update: {
+          assessor_name?: string | null
+          general_comments?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          submission_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "feedback_snippets_criterion_code_fkey"
-            columns: ["criterion_code"]
+            foreignKeyName: "feedback_summary_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gradings: {
+        Row: {
+          achieved: boolean
+          assessed_at: string | null
+          comment: string | null
+          criterion_id: string
+          id: string
+          submission_id: string
+        }
+        Insert: {
+          achieved: boolean
+          assessed_at?: string | null
+          comment?: string | null
+          criterion_id: string
+          id?: string
+          submission_id: string
+        }
+        Update: {
+          achieved?: boolean
+          assessed_at?: string | null
+          comment?: string | null
+          criterion_id?: string
+          id?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gradings_criterion_id_fkey"
+            columns: ["criterion_id"]
             isOneToOne: false
             referencedRelation: "criteria"
-            referencedColumns: ["code"]
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gradings_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
           },
         ]
       }
       profiles: {
         Row: {
           avatar_url: string | null
+          class_id: string | null
           created_at: string
           email: string | null
           full_name: string | null
+          group_name: string | null
           id: string
+          role: string
         }
         Insert: {
           avatar_url?: string | null
+          class_id?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
+          group_name?: string | null
           id: string
+          role?: string
         }
         Update: {
           avatar_url?: string | null
+          class_id?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
+          group_name?: string | null
           id?: string
+          role?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       resource_views: {
         Row: {
@@ -342,26 +540,35 @@ export type Database = {
       submissions: {
         Row: {
           assignment_id: string
+          attempt_no: number
           created_at: string
+          file_url: string
           id: string
           status: string
           student_id: string
+          submitted_at: string
           updated_at: string
         }
         Insert: {
           assignment_id: string
+          attempt_no?: number
           created_at?: string
+          file_url: string
           id?: string
           status?: string
           student_id: string
+          submitted_at?: string
           updated_at?: string
         }
         Update: {
           assignment_id?: string
+          attempt_no?: number
           created_at?: string
+          file_url?: string
           id?: string
           status?: string
           student_id?: string
+          submitted_at?: string
           updated_at?: string
         }
         Relationships: [
@@ -404,11 +611,75 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_assignment: {
+        Args: { _assignment_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_access_class: {
+        Args: { _class_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_access_student: {
+        Args: { _student_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_access_submission: {
+        Args: { _submission_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_student_submit: {
+        Args: { _assignment_id: string; _user_id: string }
+        Returns: boolean
+      }
+      complete_initial_password_change: { Args: never; Returns: boolean }
+      create_engineer: {
+        Args: { _email: string; _full_name: string }
+        Returns: {
+          email: string
+          temporary_password: string
+          user_id: string
+        }[]
+      }
+      engineer_has_class: {
+        Args: { _class_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      import_students: {
+        Args: { _class_id: string; _students: Json }
+        Returns: {
+          created: boolean
+          error: string
+          full_name: string
+          student_code: string
+          temporary_password: string
+        }[]
+      }
+      is_unit_leader: { Args: { _user_id: string }; Returns: boolean }
+      set_portal_role: {
+        Args: { _profile_id: string; _role: string }
+        Returns: undefined
+      }
+      storage_can_read_brief: {
+        Args: { _object_name: string; _user_id: string }
+        Returns: boolean
+      }
+      storage_can_read_submission: {
+        Args: { _object_name: string; _user_id: string }
+        Returns: boolean
+      }
+      storage_can_upload_submission: {
+        Args: { _object_name: string; _user_id: string }
+        Returns: boolean
+      }
+      submission_feedback_is_published: {
+        Args: { _submission_id: string }
         Returns: boolean
       }
     }
