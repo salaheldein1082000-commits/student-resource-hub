@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Download, FileText, Printer, Save, Send, ShieldCheck } from "lucide-react";
-import * as mammoth from "mammoth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -12,13 +11,12 @@ import { useMe } from "@/lib/auth";
 import { useLocale } from "@/lib/locale";
 import { printFeedbackAsPdf } from "@/lib/feedbackPdf";
 import {
-  portalAssignmentsQuery,
+  portalAssignmentByIdQuery,
   portalDb,
+  portalSubmissionByIdQuery,
   portalSubmissionsQuery,
   signedStorageUrl,
-  type PortalAssignment,
   type PortalCriterion,
-  type PortalSubmission,
 } from "@/lib/portal";
 
 export const Route = createFileRoute("/_authenticated/manage/submissions/$id")({
@@ -40,11 +38,10 @@ function GradeSubmission() {
   const { data: me } = useMe();
   const { t, locale } = useLocale();
   const queryClient = useQueryClient();
-  const { data: submissions = [], isLoading: submissionsLoading } =
-    useQuery(portalSubmissionsQuery);
-  const { data: assignments = [] } = useQuery(portalAssignmentsQuery);
-  const submission = submissions.find((item) => item.id === id);
-  const assignment = assignments.find((item) => item.id === submission?.assignment_id);
+  const submissionQuery = useQuery(portalSubmissionByIdQuery(id));
+  const submission = submissionQuery.data;
+  const assignmentQuery = useQuery(portalAssignmentByIdQuery(submission?.assignment_id ?? null));
+  const assignment = assignmentQuery.data;
   const [rows, setRows] = useState<Record<string, GradeRow>>({});
   const [generalComments, setGeneralComments] = useState("");
   const [busy, setBusy] = useState(false);
@@ -85,6 +82,7 @@ function GradeSubmission() {
       const response = await fetch(url);
       if (!response.ok) throw new Error("Could not download the private DOCX preview.");
       const arrayBuffer = await response.arrayBuffer();
+      const mammoth = await import("mammoth");
       const result = await mammoth.extractRawText({ arrayBuffer });
       return { kind: "docx", text: result.value };
     },
@@ -111,7 +109,15 @@ function GradeSubmission() {
         rows[criterion.id]?.achieved !== null && rows[criterion.id]?.achieved !== undefined,
     );
 
-  if (submissionsLoading) return <p className="text-muted-foreground">{t("loading")}</p>;
+  if (submissionQuery.isLoading || (submission && assignmentQuery.isLoading))
+    return <p className="text-muted-foreground">{t("loading")}</p>;
+  if (submissionQuery.error || assignmentQuery.error) {
+    return (
+      <p className="rounded-xl border bg-card p-6 text-destructive" role="alert">
+        {submissionQuery.error?.message ?? assignmentQuery.error?.message}
+      </p>
+    );
+  }
   if (!submission || !assignment || !me || me.role === "student") {
     return (
       <p className="rounded-xl border bg-card p-6 text-muted-foreground">
@@ -299,6 +305,7 @@ function GradeSubmission() {
       toast.success("Feedback published to the student.");
       await queryClient.invalidateQueries({ queryKey: ["portal", "assessment", id] });
       await queryClient.invalidateQueries({ queryKey: ["portal", "submissions"] });
+      await queryClient.invalidateQueries({ queryKey: ["portal", "submission", id] });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not publish feedback.");
     } finally {
@@ -324,6 +331,7 @@ function GradeSubmission() {
     toast.success("Resubmission allowed for this student.");
     await queryClient.invalidateQueries({ queryKey: ["portal", "assessment", id] });
     await queryClient.invalidateQueries({ queryKey: ["portal", "submissions"] });
+    await queryClient.invalidateQueries({ queryKey: ["portal", "submission", id] });
   }
 
   async function downloadFile() {

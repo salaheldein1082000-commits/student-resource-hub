@@ -84,6 +84,7 @@ export const portalClassesQuery = queryOptions({
       engineer_id: staff.find((x) => x.class_id === item.id)?.engineer_id ?? null,
     }));
   },
+  staleTime: 30_000,
 });
 
 export const portalProfilesQuery = queryOptions({
@@ -95,6 +96,7 @@ export const portalProfilesQuery = queryOptions({
         .select("id, full_name, email, role, group_name, class_id")
         .order("full_name"),
     ),
+  staleTime: 30_000,
 });
 
 export type PortalStudent = Pick<PortalProfile, "id" | "full_name" | "group_name" | "class_id">;
@@ -111,6 +113,7 @@ export const portalStudentsQuery = (userId: string | null) =>
           .eq("role", "student")
           .order("full_name"),
       ),
+    staleTime: 30_000,
   });
 
 export const portalAssignmentsQuery = queryOptions({
@@ -130,7 +133,30 @@ export const portalAssignmentsQuery = queryOptions({
       criteria: cRows.filter((x) => x.assignment_id === assignment.id),
     }));
   },
+  staleTime: 30_000,
 });
+
+export const portalAssignmentByIdQuery = (assignmentId: string | null) =>
+  queryOptions({
+    queryKey: ["portal", "assignment", assignmentId],
+    enabled: Boolean(assignmentId),
+    queryFn: async (): Promise<PortalAssignment> => {
+      if (!assignmentId) throw new Error("Assignment ID is required.");
+      const [assignmentResult, criteriaResult] = await Promise.all([
+        portalDb.from("assignments").select("*").eq("id", assignmentId).maybeSingle(),
+        portalDb.from("criteria").select("*").eq("assignment_id", assignmentId).order("sort_order"),
+      ]);
+      const assignment = unwrap<AssignmentRow | null>(assignmentResult);
+      if (!assignment) throw new Error("The assignment was not found or is not available to you.");
+      const criteria = unwrap<PortalCriterion[]>(criteriaResult);
+      return {
+        ...assignment,
+        class_ids: [],
+        criteria,
+      };
+    },
+    staleTime: 30_000,
+  });
 
 export const portalSubmissionsQuery = queryOptions({
   queryKey: ["portal", "submissions"],
@@ -138,10 +164,29 @@ export const portalSubmissionsQuery = queryOptions({
     unwrap(
       await portalDb
         .from("submissions")
-        .select("*, profiles(full_name, email, group_name, class_id), assignments(title, due_date)")
+        .select(
+          "id, assignment_id, student_id, file_url, submitted_at, attempt_no, status, profiles(full_name, email, group_name, class_id), assignments(title, due_date)",
+        )
         .order("submitted_at", { ascending: false }),
     ),
+  staleTime: 30_000,
 });
+
+export const portalSubmissionByIdQuery = (submissionId: string) =>
+  queryOptions({
+    queryKey: ["portal", "submission", submissionId],
+    queryFn: async (): Promise<PortalSubmission | null> =>
+      unwrap(
+        await portalDb
+          .from("submissions")
+          .select(
+            "id, assignment_id, student_id, file_url, submitted_at, attempt_no, status, profiles(full_name, email, group_name, class_id), assignments(title, due_date)",
+          )
+          .eq("id", submissionId)
+          .maybeSingle(),
+      ),
+    staleTime: 30_000,
+  });
 
 export async function signedStorageUrl(
   bucket: "submissions" | "briefs",
