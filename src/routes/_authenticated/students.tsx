@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/students")({
   },
   head: () => ({
     meta: [
-      { title: "My Students — BTEC Assessment Portal" },
+      { title: "My Students — Unit 1 IT Infrastructure" },
       {
         name: "description",
         content: "View the student roster for classes assigned to you.",

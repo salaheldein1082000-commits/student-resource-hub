@@ -76,7 +76,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
-      { title: "BTEC Assessment Portal — Unit 1" },
+      { title: "Unit 1 IT Infrastructure — BTEC Assessment Portal" },
       {
         name: "description",
         content:

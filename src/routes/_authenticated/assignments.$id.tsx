@@ -28,7 +28,7 @@ import { validateSubmissionFile } from "@/lib/submission";
 export const Route = createFileRoute("/_authenticated/assignments/$id")({
   head: () => ({
     meta: [
-      { title: "Assignment — BTEC Assessment Portal" },
+      { title: "Assignment — Unit 1 IT Infrastructure" },
       {
         name: "description",
         content: "Submit Unit 1 coursework and read published assessment feedback.",

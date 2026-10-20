@@ -24,12 +24,12 @@ import {
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — BTEC Assessment Portal" },
+      { title: "Dashboard — Unit 1 IT Infrastructure" },
       {
         name: "description",
         content: "Unit 1 assignments, class submissions and assessment progress.",
       },
-      { property: "og:title", content: "Dashboard — BTEC Assessment Portal" },
+      { property: "og:title", content: "Dashboard — Unit 1 IT Infrastructure" },
       { property: "og:description", content: "BTEC Unit 1 assignments and assessment progress." },
     ],
   }),

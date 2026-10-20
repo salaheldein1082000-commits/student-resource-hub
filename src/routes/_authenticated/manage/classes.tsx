@@ -61,7 +61,7 @@ export const Route = createFileRoute("/_authenticated/manage/classes")({
   },
   head: () => ({
     meta: [
-      { title: "Classes — BTEC Assessment Portal" },
+      { title: "Classes — Unit 1 IT Infrastructure" },
       { name: "description", content: "Manage BTEC classes, Engineers, and enrolment capacity." },
     ],
   }),

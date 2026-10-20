@@ -14,7 +14,7 @@ import {
 } from "@/lib/portal";
 
 export const Route = createFileRoute("/_authenticated/manage/submissions")({
-  head: () => ({ meta: [{ title: "Submissions — BTEC Assessment Portal" }] }),
+  head: () => ({ meta: [{ title: "Submissions — Unit 1 IT Infrastructure" }] }),
   component: SubmissionRoute,
 });
 

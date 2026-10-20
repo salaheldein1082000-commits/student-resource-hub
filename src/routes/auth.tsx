@@ -11,12 +11,12 @@ import { isValidStudentCode, needsInitialPasswordChange } from "@/lib/studentCod
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — BTEC Assessment Portal" },
+      { title: "Sign in — Unit 1 IT Infrastructure" },
       {
         name: "description",
         content: "Sign in to the BTEC Assessment Portal for Unit 1 coursework and feedback.",
       },
-      { property: "og:title", content: "Sign in — BTEC Assessment Portal" },
+      { property: "og:title", content: "Sign in — Unit 1 IT Infrastructure" },
       {
         property: "og:description",
         content: "Sign in to submit work and manage assessment feedback.",

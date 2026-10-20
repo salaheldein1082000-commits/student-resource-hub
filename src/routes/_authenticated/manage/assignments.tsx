@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/manage/assignments")({
     const me = await context.queryClient.ensureQueryData(meQuery);
     if (me?.role !== "unit_leader") throw redirect({ to: "/dashboard" });
   },
-  head: () => ({ meta: [{ title: "Assignments — BTEC Assessment Portal" }] }),
+  head: () => ({ meta: [{ title: "Assignments — Unit 1 IT Infrastructure" }] }),
   component: Assignments,
 });
 

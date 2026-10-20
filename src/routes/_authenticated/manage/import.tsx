@@ -41,7 +41,7 @@ type ImportOutcome = StudentRow & {
 export const Route = createFileRoute("/_authenticated/manage/import")({
   head: () => ({
     meta: [
-      { title: "Import students — BTEC Assessment Portal" },
+      { title: "Import students — Unit 1 IT Infrastructure" },
       {
         name: "description",
         content: "Securely import BTEC students into a class from a CSV file.",
