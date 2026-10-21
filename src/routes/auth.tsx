@@ -112,7 +112,7 @@ function AuthPage() {
           <h1 className="mt-3 text-3xl font-bold">Welcome back</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isStaff
-              ? "Sign in with your Engineer or Unit Leader account."
+              ? "Sign in with your Assessor or Unit Leader account."
               : "Sign in with your student code."}
           </p>
         </div>

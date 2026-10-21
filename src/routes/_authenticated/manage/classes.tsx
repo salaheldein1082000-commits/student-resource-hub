@@ -62,7 +62,7 @@ export const Route = createFileRoute("/_authenticated/manage/classes")({
   head: () => ({
     meta: [
       { title: "Classes — Unit 1 IT Infrastructure" },
-      { name: "description", content: "Manage BTEC classes, Engineers, and enrolment capacity." },
+      { name: "description", content: "Manage BTEC classes, Assessors, and enrolment capacity." },
     ],
   }),
   component: ClassesPage,
@@ -132,7 +132,7 @@ function ClassesPage() {
     });
   };
 
-  const assignEngineer = async (classRow: DisplayClass, engineerId: string) => {
+  const assignAssessor = async (classRow: DisplayClass, engineerId: string) => {
     if (classRow.placeholder) return;
     await withMutation(`assign-${classRow.id}`, async () => {
       if (engineerId === UNASSIGNED_VALUE) {
@@ -141,24 +141,24 @@ function ClassesPage() {
           .delete()
           .eq("class_id", classRow.id);
         if (error) throw error;
-        toast.success("Engineer unassigned.");
+        toast.success("Assessor unassigned.");
       } else {
         const { error } = await portalDb
           .from("class_engineers")
           .upsert({ class_id: classRow.id, engineer_id: engineerId }, { onConflict: "class_id" });
         if (error) throw error;
-        toast.success("Engineer assigned.");
+        toast.success("Assessor assigned.");
       }
       await queryClient.invalidateQueries({ queryKey: portalClassesQuery.queryKey });
     });
   };
 
-  const createEngineer = async (event: FormEvent<HTMLFormElement>) => {
+  const createAssessor = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const email = createEmail.trim();
     const fullName = createFullName.trim();
     if (!email || !fullName) {
-      toast.error("Enter the Engineer's full name and email.");
+      toast.error("Enter the Assessor's full name and email.");
       return;
     }
 
@@ -170,7 +170,7 @@ function ClassesPage() {
       if (error) throw error;
       const created = Array.isArray(data) ? data[0] : data;
       if (!created?.user_id || !created?.temporary_password)
-        throw new Error("Engineer account creation returned no credentials.");
+        throw new Error("Assessor account creation returned no credentials.");
 
       let assignmentError: { message: string } | null = null;
       if (createClassId !== NO_CLASS_VALUE) {
@@ -192,14 +192,14 @@ function ClassesPage() {
       await invalidatePortal();
       toast.success(
         assignmentError
-          ? "Engineer created, but class assignment needs attention."
-          : "Engineer account created.",
+          ? "Assessor created, but class assignment needs attention."
+          : "Assessor account created.",
       );
       if (assignmentError) toast.error(assignmentError.message);
     });
   };
 
-  const promoteEngineer = async (event: FormEvent<HTMLFormElement>) => {
+  const promoteAssessor = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!promoteProfileId) {
       toast.error("Choose an existing profile to promote.");
@@ -228,7 +228,7 @@ function ClassesPage() {
       toast.success(
         assignmentError
           ? "Profile promoted, but class assignment needs attention."
-          : "Profile promoted to Engineer.",
+          : "Profile promoted to Assessor.",
       );
       if (assignmentError) toast.error(assignmentError.message);
     });
@@ -241,7 +241,7 @@ function ClassesPage() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Classes"
-        sub="Set up the 20-seat teaching groups and keep Engineer access class-scoped."
+        sub="Set up the 20-seat teaching groups and keep Assessor access class-scoped."
       >
         <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs text-muted-foreground">
           <ShieldCheck className="h-4 w-4 text-primary" /> Unit Leader admin
@@ -302,7 +302,7 @@ function ClassesPage() {
                   setEditingName("");
                 }}
                 onSaveRename={() => void renameClass(classRow)}
-                onAssign={(engineerId) => void assignEngineer(classRow, engineerId)}
+                onAssign={(engineerId) => void assignAssessor(classRow, engineerId)}
               />
             ))}
           </div>
@@ -311,14 +311,14 @@ function ClassesPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-primary" /> Create an Engineer
+                  <UserPlus className="h-5 w-5 text-primary" /> Create an Assessor
                 </CardTitle>
                 <CardDescription>
                   Create a staff login and optionally assign it to one class immediately.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form className="space-y-4" onSubmit={createEngineer}>
+                <form className="space-y-4" onSubmit={createAssessor}>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="engineer-name">Full name</Label>
@@ -354,7 +354,7 @@ function ClassesPage() {
                   </div>
                   <Button type="submit" disabled={mutatingKey === "create-engineer"}>
                     <Plus className="h-4 w-4" />{" "}
-                    {mutatingKey === "create-engineer" ? "Creating…" : "Create Engineer"}
+                    {mutatingKey === "create-engineer" ? "Creating…" : "Create Assessor"}
                   </Button>
                 </form>
 
@@ -394,7 +394,7 @@ function ClassesPage() {
                   <UserCheck className="h-5 w-5 text-primary" /> Promote an existing profile
                 </CardTitle>
                 <CardDescription>
-                  Only student profiles are offered here; existing Engineers and Unit Leaders
+                  Only student profiles are offered here; existing Assessors and Unit Leaders
                   already have staff roles.
                 </CardDescription>
               </CardHeader>
@@ -404,7 +404,7 @@ function ClassesPage() {
                     No eligible student profiles are available to promote.
                   </div>
                 ) : (
-                  <form className="space-y-4" onSubmit={promoteEngineer}>
+                  <form className="space-y-4" onSubmit={promoteAssessor}>
                     <div className="space-y-2">
                       <Label>Existing profile</Label>
                       <Select value={promoteProfileId} onValueChange={setPromoteProfileId}>
@@ -438,7 +438,7 @@ function ClassesPage() {
                       disabled={mutatingKey === "promote-engineer"}
                     >
                       <ShieldCheck className="h-4 w-4" />{" "}
-                      {mutatingKey === "promote-engineer" ? "Promoting…" : "Promote to Engineer"}
+                      {mutatingKey === "promote-engineer" ? "Promoting…" : "Promote to Assessor"}
                     </Button>
                   </form>
                 )}
@@ -450,7 +450,7 @@ function ClassesPage() {
             <Users className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
               <span className="font-semibold text-foreground">Access rule:</span> each class has one
-              Engineer, and an Engineer may be assigned to no more than two classes. The database
+              Assessor, and an Assessor may be assigned to no more than two classes. The database
               enforces both role and assignment limits.
             </p>
           </div>
@@ -549,7 +549,7 @@ function ClassCard({
       <CardContent className="space-y-3">
         <div className="rounded-lg bg-muted/40 p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Assigned Engineer
+            Assigned Assessor
           </p>
           <p className="mt-1 truncate text-sm font-medium">
             {engineer ? profileLabel(engineer) : "Not assigned"}
@@ -561,11 +561,11 @@ function ClassCard({
           </p>
         ) : (
           <Select value={assignedId} onValueChange={onAssign} disabled={busy}>
-            <SelectTrigger aria-label={`Assign Engineer to ${classRow.name}`}>
-              <SelectValue placeholder="Choose an Engineer" />
+            <SelectTrigger aria-label={`Assign Assessor to ${classRow.name}`}>
+              <SelectValue placeholder="Choose an Assessor" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={UNASSIGNED_VALUE}>No Engineer assigned</SelectItem>
+              <SelectItem value={UNASSIGNED_VALUE}>No Assessor assigned</SelectItem>
               {engineers.map((candidate) => {
                 const atLimit =
                   (engineerAssignments.get(candidate.id) ?? 0) >= 2 &&

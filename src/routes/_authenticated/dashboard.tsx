@@ -171,7 +171,7 @@ function StaffDashboard() {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title={isLeader ? "Unit Leader dashboard" : "Engineer dashboard"}
+        title={isLeader ? "Unit Leader dashboard" : "Assessor dashboard"}
         sub={
           isLeader
             ? "Overview across all classes and submissions."
@@ -195,7 +195,7 @@ function StaffDashboard() {
           <p className="font-semibold">Class allocation</p>
           <p className="mt-1 text-sm text-muted-foreground">
             {classes.filter((group) => group.engineer_id).length} of {classes.length} classes have
-            an Engineer assigned. {students.length} of {classes.length * 20} roster places are
+            an Assessor assigned. {students.length} of {classes.length * 20} roster places are
             currently assigned.
           </p>
           <Link

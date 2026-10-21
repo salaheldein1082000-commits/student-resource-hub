@@ -15,6 +15,8 @@ type MessageKey =
   | "manage"
   | "unitLeader"
   | "engineer"
+  | "assessor"
+  | "manageAssessors"
   | "student"
   | "signOut"
   | "switchLanguage"
@@ -92,7 +94,9 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
     feedbackBank: "Feedback bank",
     manage: "Manage",
     unitLeader: "Unit Leader",
-    engineer: "Engineer",
+    engineer: "Assessor",
+    assessor: "Assessor",
+    manageAssessors: "Assessors",
     student: "Student",
     signOut: "Sign out",
     switchLanguage: "العربية",
@@ -118,7 +122,7 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
     status: "Status",
     all: "All",
     students: "Students",
-    engineers: "Engineers",
+    engineers: "Assessors",
     capacity: "Capacity",
     enrollment: "Enrolled",
     unassigned: "Unassigned",
@@ -169,7 +173,9 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
     feedbackBank: "بنك الملاحظات",
     manage: "إدارة",
     unitLeader: "قائد الوحدة",
-    engineer: "المهندس",
+    engineer: "المقيّم",
+    assessor: "المقيّم",
+    manageAssessors: "المقيّمون",
     student: "الطالب",
     signOut: "تسجيل الخروج",
     switchLanguage: "English",
@@ -195,7 +201,7 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
     status: "الحالة",
     all: "الكل",
     students: "الطلاب",
-    engineers: "المهندسون",
+    engineers: "المقيّمون",
     capacity: "السعة",
     enrollment: "عدد المسجلين",
     unassigned: "غير معيّن",

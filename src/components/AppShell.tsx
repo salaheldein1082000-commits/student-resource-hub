@@ -12,6 +12,7 @@ import {
   Users,
   Upload,
   ClipboardCheck,
+  UserCog,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/auth";
@@ -28,8 +29,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { locale, toggleLocale, t } = useLocale();
   const isLeader = me?.role === "unit_leader";
-  const isEngineer = me?.role === "engineer";
-  const isStaff = isLeader || isEngineer;
+  const isAssessor = me?.role === "engineer";
+  const isStaff = isLeader || isAssessor;
 
   async function signOut() {
     await qc.cancelQueries();
@@ -47,13 +48,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             alt="Unit 1 IT Infrastructure"
             className="h-12 w-full rounded-lg bg-card object-contain p-1.5"
           />
-          <span className="mt-3 block font-display text-base font-semibold">BTEC Assessment Portal</span>
+          <span className="mt-3 block font-display text-base font-semibold">
+            BTEC Assessment Portal
+          </span>
         </Link>
         <p className="px-3 text-xs text-sidebar-foreground/70">
           Elsewedy Technical Academy · Unit 1
         </p>
         <p className="px-3 font-mono text-[10px] uppercase tracking-widest text-sidebar-primary">
-          {isLeader ? t("unitLeader") : isEngineer ? t("engineer") : t("student")}
+          {isLeader ? t("unitLeader") : isAssessor ? t("assessor") : t("student")}
         </p>
         <nav className="mt-6 flex flex-row flex-wrap gap-1 md:flex-col">
           <Link to="/dashboard" className={linkCls} activeProps={{ className: activeCls }}>
@@ -72,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <ClipboardCheck className="h-4 w-4" /> {t("submissions")}
               </Link>
               <Link to="/students" className={linkCls} activeProps={{ className: activeCls }}>
-                <Users className="h-4 w-4" /> {isEngineer ? t("myStudents") : t("studentRoster")}
+                <Users className="h-4 w-4" /> {isAssessor ? t("myStudents") : t("studentRoster")}
               </Link>
             </>
           )}
@@ -83,6 +86,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               </p>
               <Link to="/manage/classes" className={linkCls} activeProps={{ className: activeCls }}>
                 <Users className="h-4 w-4" /> {t("classes")}
+              </Link>
+              <Link
+                to="/manage/assessors"
+                className={linkCls}
+                activeProps={{ className: activeCls }}
+              >
+                <UserCog className="h-4 w-4" /> {t("manageAssessors")}
               </Link>
               <Link to="/manage/import" className={linkCls} activeProps={{ className: activeCls }}>
                 <Upload className="h-4 w-4" /> {t("importStudents")}

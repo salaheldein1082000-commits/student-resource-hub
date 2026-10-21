@@ -195,7 +195,7 @@ function AssignmentPage() {
           <p className="mb-4 text-sm text-muted-foreground">{t("fileLimit")}</p>
           {isPastDue && latest?.status === "resubmission_allowed" && (
             <p className="mb-4 rounded-lg bg-accent/40 p-3 text-sm">
-              Your Engineer has allowed a resubmission after the deadline.
+              Your Assessor has allowed a resubmission after the deadline.
             </p>
           )}
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -216,7 +216,7 @@ function AssignmentPage() {
         </section>
       ) : (
         <p className="mb-8 rounded-xl border bg-muted p-4 text-sm text-muted-foreground">
-          The due date has passed. Contact your Engineer if you need permission to resubmit.
+          The due date has passed. Contact your Assessor if you need permission to resubmit.
         </p>
       )}
 
