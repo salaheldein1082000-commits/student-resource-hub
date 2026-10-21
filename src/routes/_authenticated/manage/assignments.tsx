@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -342,6 +342,81 @@ function AssignmentCard({
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(assignment.class_ids);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(assignment.title);
+  const [brief, setBrief] = useState(assignment.brief ?? "");
+  const [dueDate, setDueDate] = useState(assignment.due_date ?? "");
+  const [part, setPart] = useState(String(assignment.part));
+  const [totalParts, setTotalParts] = useState(String(assignment.total_parts));
+
+  async function saveDetails() {
+    const partNumber = Number(part);
+    const totalNumber = Number(totalParts);
+    if (
+      !title.trim() ||
+      !Number.isInteger(partNumber) ||
+      !Number.isInteger(totalNumber) ||
+      partNumber < 1 ||
+      totalNumber < partNumber
+    ) {
+      toast.error("Enter a title and valid part numbers.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await portalDb
+        .from("assignments")
+        .update({
+          title: title.trim(),
+          brief: brief.trim() || null,
+          due_date: dueDate || null,
+          part: partNumber,
+          total_parts: totalNumber,
+        })
+        .eq("id", assignment.id);
+      if (error) throw error;
+      toast.success("Assignment details updated.");
+      setEditing(false);
+      await onSaved();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update assignment.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteAssignment() {
+    if (!window.confirm(`Permanently delete “${assignment.title}”? This cannot be undone.`)) return;
+    setBusy(true);
+    try {
+      const { count, error: countError } = await portalDb
+        .from("submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("assignment_id", assignment.id);
+      if (countError) throw countError;
+      if ((count ?? 0) > 0)
+        throw new Error(
+          "This assignment has submissions; it cannot be deleted because assessment history must be preserved.",
+        );
+      const { error } = await portalDb.from("assignments").delete().eq("id", assignment.id);
+      if (error) throw error;
+      if (assignment.brief_pdf_url) {
+        const { error: storageError } = await supabase.storage
+          .from("briefs")
+          .remove([assignment.brief_pdf_url]);
+        if (storageError)
+          toast.warning(
+            `Assignment deleted, but its brief file could not be removed: ${storageError.message}`,
+          );
+      }
+      toast.success("Assignment deleted.");
+      await onSaved();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete assignment.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function saveClasses() {
     setBusy(true);
@@ -396,7 +471,85 @@ function AssignmentCard({
         <Button size="sm" variant="secondary" onClick={() => onTogglePublish(assignment)}>
           {assignment.is_published ? "Unpublish" : "Publish"}
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setEditing((value) => !value)}
+          disabled={busy}
+        >
+          <Pencil className="mr-1 h-4 w-4" /> {editing ? "Close edit" : "Edit"}
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => void deleteAssignment()}
+          disabled={busy}
+        >
+          <Trash2 className="mr-1 h-4 w-4" /> Delete
+        </Button>
       </div>
+      {editing && (
+        <div className="mt-5 grid gap-3 border-t pt-4 sm:grid-cols-2">
+          <div className="space-y-1 sm:col-span-2">
+            <Label>Assignment title</Label>
+            <Input value={title} onChange={(event) => setTitle(event.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Part</Label>
+            <Input
+              type="number"
+              min="1"
+              value={part}
+              onChange={(event) => setPart(event.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Total parts</Label>
+            <Input
+              type="number"
+              min="1"
+              value={totalParts}
+              onChange={(event) => setTotalParts(event.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Due date</Label>
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(event) => setDueDate(event.target.value)}
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <Label>Brief instructions</Label>
+            <Textarea rows={3} value={brief} onChange={(event) => setBrief(event.target.value)} />
+          </div>
+          <div className="flex gap-2 sm:col-span-2">
+            <Button size="sm" onClick={() => void saveDetails()} disabled={busy}>
+              {busy ? "Saving…" : "Save details"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setTitle(assignment.title);
+                setBrief(assignment.brief ?? "");
+                setDueDate(assignment.due_date ?? "");
+                setPart(String(assignment.part));
+                setTotalParts(String(assignment.total_parts));
+                setEditing(false);
+              }}
+              disabled={busy}
+            >
+              Cancel
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground sm:col-span-2">
+            Criteria and brief PDF are unchanged. Assignments with any submissions cannot be
+            deleted.
+          </p>
+        </div>
+      )}
       {open && (
         <div className="mt-5 border-t pt-4">
           <div className="grid gap-2 sm:grid-cols-3">
