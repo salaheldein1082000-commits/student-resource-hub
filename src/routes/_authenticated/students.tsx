@@ -42,6 +42,7 @@ function StudentRosterPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editClassId, setEditClassId] = useState("");
+  const [editStudentCode, setEditStudentCode] = useState("");
   const [busy, setBusy] = useState(false);
 
   const classes = classesQuery.data;
@@ -105,20 +106,27 @@ function StudentRosterPage() {
       toast.error("Choose a valid class.");
       return;
     }
+    const studentCode = editStudentCode.trim();
+    if (studentCode && !/^\d{6}$/.test(studentCode)) {
+      toast.error("Student code must contain exactly 6 digits.");
+      return;
+    }
     setBusy(true);
     try {
-      const { error } = await portalDb
-        .from("profiles")
-        .update({
-          full_name: editName.trim(),
-          class_id: selectedClass?.id ?? null,
-          group_name: selectedClass?.name ?? null,
-        })
-        .eq("id", studentId)
-        .eq("role", "student");
+      const { error } = await portalDb.rpc("update_student_profile_and_login", {
+        _profile_id: studentId,
+        _full_name: editName.trim(),
+        _class_id: selectedClass?.id ?? null,
+        _student_code: studentCode || null,
+      });
       if (error) throw error;
-      toast.success("Student profile updated.");
+      toast.success(
+        studentCode
+          ? "Student profile updated; the new code is also the password."
+          : "Student profile updated.",
+      );
       setEditingId(null);
+      setEditStudentCode("");
       await queryClient.invalidateQueries({ queryKey: ["portal", "students"] });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not update student profile.");
@@ -249,11 +257,36 @@ function StudentRosterPage() {
                     {editingId === student.id ? (
                       <>
                         <td className="px-4 py-3">
-                          <Input
-                            aria-label="Student name"
-                            value={editName}
-                            onChange={(event) => setEditName(event.target.value)}
-                          />
+                          <div className="space-y-2">
+                            <Input
+                              aria-label="Student name"
+                              value={editName}
+                              onChange={(event) => setEditName(event.target.value)}
+                            />
+                            <Input
+                              aria-label="New 6-digit student code (optional)"
+                              inputMode="numeric"
+                              maxLength={6}
+                              placeholder="New student code (optional)"
+                              value={editStudentCode}
+                              onChange={(event) =>
+                                setEditStudentCode(
+                                  event.target.value.replace(/\D/g, "").slice(0, 6),
+                                )
+                              }
+                            />
+                            <Input
+                              aria-label="Password (same as student code)"
+                              type="password"
+                              readOnly
+                              value={editStudentCode}
+                              placeholder="Password will match the new code"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Leave the code blank to keep current credentials. If changed, the
+                              password is reset to the same six-digit code.
+                            </p>
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <select
@@ -317,6 +350,7 @@ function StudentRosterPage() {
                                   setEditingId(student.id);
                                   setEditName(student.full_name ?? "");
                                   setEditClassId(student.class_id ?? "");
+                                  setEditStudentCode("");
                                 }}
                               >
                                 <Pencil className="h-4 w-4" />

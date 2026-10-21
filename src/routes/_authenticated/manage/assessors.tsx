@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { KeyRound, UserPlus } from "lucide-react";
+import { KeyRound, Pencil, Save, Trash2, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +44,11 @@ function AssessorsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [classId, setClassId] = useState(NO_CLASS);
   const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editClassIds, setEditClassIds] = useState<string[]>([]);
   const assessors = profiles.filter((profile) => profile.role === "engineer");
 
   async function createAssessor(event: FormEvent<HTMLFormElement>) {
@@ -87,6 +92,76 @@ function AssessorsPage() {
       ]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not create Assessor account.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveAssessor(profileId: string) {
+    const cleanName = editName.trim();
+    const cleanEmail = editEmail.trim().toLowerCase();
+    if (cleanName.length < 2 || cleanName.length > 120) {
+      toast.error("Name must be between 2 and 120 characters.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      toast.error("Enter a valid email address.");
+      return;
+    }
+    if (
+      editPassword &&
+      (editPassword.length < 8 || new TextEncoder().encode(editPassword).length > 72)
+    ) {
+      toast.error("A new password must be at least 8 characters and no more than 72 bytes.");
+      return;
+    }
+    if (editClassIds.length > 2) {
+      toast.error("An Assessor can be assigned to no more than two classes.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await portalDb.rpc("update_assessor_account", {
+        _profile_id: profileId,
+        _email: cleanEmail,
+        _full_name: cleanName,
+        _password: editPassword || null,
+        _class_ids: editClassIds,
+      });
+      if (error) throw error;
+      toast.success("Assessor account updated.");
+      setEditingId(null);
+      setEditPassword("");
+      setEditClassIds([]);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: portalProfilesQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: portalClassesQuery.queryKey }),
+      ]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update Assessor account.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteAssessor(profileId: string, name: string, assessorEmail: string) {
+    if (
+      !window.confirm(
+        `Permanently delete ${name || assessorEmail}? Their portal account will be removed, their classes unassigned, and linked activity records may be removed. This cannot be undone.`,
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const { error } = await portalDb.rpc("delete_assessor_account", { _profile_id: profileId });
+      if (error) throw error;
+      toast.success("Assessor account deleted.");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: portalProfilesQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: portalClassesQuery.queryKey }),
+      ]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete Assessor account.");
     } finally {
       setBusy(false);
     }
@@ -210,13 +285,157 @@ function AssessorsPage() {
                     .map((classRow) => classRow.name);
                   return (
                     <li key={assessor.id} className="py-3 first:pt-0 last:pb-0">
-                      <p className="font-medium">{assessor.full_name || "Unnamed Assessor"}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {assessor.email || "No email on profile"}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {assigned.length ? assigned.join(", ") : "No classes assigned"}
-                      </p>
+                      {editingId === assessor.id ? (
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <Label htmlFor={`assessor-edit-name-${assessor.id}`}>Full name</Label>
+                            <Input
+                              id={`assessor-edit-name-${assessor.id}`}
+                              value={editName}
+                              onChange={(event) => setEditName(event.target.value)}
+                              maxLength={120}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor={`assessor-edit-email-${assessor.id}`}>
+                              Email address
+                            </Label>
+                            <Input
+                              id={`assessor-edit-email-${assessor.id}`}
+                              type="email"
+                              value={editEmail}
+                              onChange={(event) => setEditEmail(event.target.value)}
+                              maxLength={254}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor={`assessor-edit-password-${assessor.id}`}>
+                              New password (optional)
+                            </Label>
+                            <Input
+                              id={`assessor-edit-password-${assessor.id}`}
+                              type="password"
+                              autoComplete="new-password"
+                              value={editPassword}
+                              onChange={(event) => setEditPassword(event.target.value)}
+                              minLength={8}
+                              maxLength={72}
+                              placeholder="Leave blank to keep current"
+                            />
+                          </div>
+                          <fieldset className="space-y-2">
+                            <legend className="text-sm font-medium">
+                              Assigned classes (up to two)
+                            </legend>
+                            {classes.map((classRow) => {
+                              const assignedToOther = Boolean(
+                                classRow.engineer_id && classRow.engineer_id !== assessor.id,
+                              );
+                              const checked = editClassIds.includes(classRow.id);
+                              return (
+                                <label
+                                  key={classRow.id}
+                                  className="flex items-center gap-2 text-sm"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    disabled={busy || (assignedToOther && !checked)}
+                                    onChange={(event) => {
+                                      if (event.target.checked) {
+                                        if (editClassIds.length >= 2) {
+                                          toast.error(
+                                            "An Assessor can be assigned to no more than two classes.",
+                                          );
+                                          return;
+                                        }
+                                        setEditClassIds([...editClassIds, classRow.id]);
+                                      } else {
+                                        setEditClassIds(
+                                          editClassIds.filter((id) => id !== classRow.id),
+                                        );
+                                      }
+                                    }}
+                                  />
+                                  <span>
+                                    {classRow.name}
+                                    {assignedToOther ? " · assigned to another Assessor" : ""}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </fieldset>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => void saveAssessor(assessor.id)}
+                              disabled={busy}
+                            >
+                              <Save className="mr-1 h-4 w-4" />
+                              Save changes
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={busy}
+                              onClick={() => {
+                                setEditingId(null);
+                                setEditPassword("");
+                                setEditClassIds([]);
+                              }}
+                            >
+                              <X className="mr-1 h-4 w-4" />
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="font-medium">{assessor.full_name || "Unnamed Assessor"}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {assessor.email || "No email on profile"}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {assigned.length ? assigned.join(", ") : "No classes assigned"}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={busy}
+                              onClick={() => {
+                                setEditingId(assessor.id);
+                                setEditName(assessor.full_name ?? "");
+                                setEditEmail(assessor.email ?? "");
+                                setEditPassword("");
+                                setEditClassIds(
+                                  classes
+                                    .filter((classRow) => classRow.engineer_id === assessor.id)
+                                    .map((classRow) => classRow.id),
+                                );
+                              }}
+                            >
+                              <Pencil className="mr-1 h-4 w-4" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={busy}
+                              onClick={() =>
+                                void deleteAssessor(
+                                  assessor.id,
+                                  assessor.full_name ?? "Assessor",
+                                  assessor.email ?? "this account",
+                                )
+                              }
+                            >
+                              <Trash2 className="mr-1 h-4 w-4" />
+                              Delete
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </li>
                   );
                 })}
