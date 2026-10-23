@@ -25,7 +25,8 @@
 - [ ] Create/confirm the six real Assessor accounts and allocate two classes to each.
 - [ ] Confirm/replace demo assignments, briefs, due dates, and public demo learning resources with academy-approved materials before operational use.
 - [ ] Enable Supabase Auth leaked-password protection in the project dashboard.
-- [ ] Deploy the updated static frontend to Vercel; the previous deployment attempt was blocked by a 403 on the user's Vercel account.
+- [x] Push commit `c944ec2` to GitHub and verify that the Vercel production deployment is marked Ready.
+- [ ] Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Vercel project and redeploy; the project currently has no environment variables, so the deployed SPA cannot initialize Supabase yet.
 
 ## Private Google Drive submission storage
 
@@ -37,7 +38,15 @@
 - [x] Apply the additive migration `supabase/migrations/20261022120000_private_google_drive_submissions.sql` and deploy both Supabase Edge Functions to the `Unit1` project. The old write policies remain active.
 - [x] Local checks passed: changed-file ESLint, TypeScript, 18 Vitest tests, Vite production build, and Deno checks for both Edge Functions.
 - [ ] In Google Cloud, enable Drive API and Picker API, configure OAuth redirect URI `https://kcuawkpihnijjayywidk.supabase.co/functions/v1/drive-oauth` and browser origins, then add the OAuth Client ID/Secret, restricted Picker API key/project number, and `DRIVE_ALLOWED_ORIGINS` to Supabase Edge Function Secrets.
-- [ ] Deploy the new frontend, connect the Unit Leader Google account, and map all 12 restricted class folders.
+- [ ] After the Vercel variables are added and frontend redeployed, connect the Unit Leader Google account and map all 12 restricted class folders.
 - [ ] Test a student upload and an authorized Assessor download/preview end to end.
 - [ ] Only after the new portal is live and tested, apply `supabase/manual/disable_legacy_supabase_submission_writes.sql`; it blocks new Supabase-backed student uploads but retains read access to old private submissions.
 - [ ] Review Drive download/function bandwidth after rollout; file storage leaves Supabase Storage, but private download traffic still uses Edge Function/network capacity.
+
+
+## Security review follow-up (2026-10-23)
+
+- [x] Review Supabase `SECURITY DEFINER` RPC grants and bodies. The exposed management RPCs enforce Unit Leader checks; identity-scoped RLS helpers compare the supplied ID with `auth.uid()`; Drive token/session RPCs are service-role-only. Grants were not broadly revoked because several helpers are required by RLS.
+- [x] Fix CSV reimport behavior so existing student passwords and auth metadata are not changed and no temporary password is returned for an existing account. New accounts still receive the six-digit initial password and a `must_change_password` marker.
+- [x] Apply `supabase/migrations/20261023120000_drive_indexes_and_student_reimport_safety.sql`; verify the import function grants and all three indexes.
+- [ ] Enable leaked-password protection in Supabase Auth. The security advisor still reports it disabled.

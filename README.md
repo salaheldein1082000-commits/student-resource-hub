@@ -61,7 +61,7 @@ After the migration and both Edge Functions are deployed and the secrets are pre
 
 The currently deployed frontend still writes new submissions directly to Supabase Storage. The additive Drive migration intentionally preserves those old write policies so the live portal keeps working during transition. Apply the core schema migration and deploy both Edge Functions first, add the Google/Supabase secrets, then deploy the Vite frontend. Connect Drive and map the 12 private class folders; test a student upload and an authorized Assessor download before removing the old write path. Only after that test, apply `supabase/manual/disable_legacy_supabase_submission_writes.sql` as a separate cutover. It removes student INSERT policies for new Supabase-backed submissions but preserves SELECT access to all historical private files. Do not apply that manual cutover while the old frontend is still serving students.
 
-Current project status (2026-10-23): the additive migration and both Edge Functions are deployed to the `Unit1` Supabase project. Google Cloud APIs/credentials, the final Vercel frontend deployment, class-folder mapping, and the end-to-end test remain. The manual Supabase-write cutover has **not** been applied.
+Current project status (2026-10-23): the additive migration and both Edge Functions are deployed to the `Unit1` Supabase project. GitHub commit `c944ec2` is deployed to Vercel production and is marked **Ready** at `https://student-resource-hub-eta.vercel.app`, but the Vercel project currently has no environment variables. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in Vercel Project Settings → Environment Variables, then redeploy before using the portal. Google Cloud APIs/credentials, class-folder mapping, and the end-to-end test remain. The manual Supabase-write cutover has **not** been applied.
 
 New files are named using class, six-digit student code, assignment slug, and attempt number. The browser uploads file bytes directly to a Google resumable-upload session; Supabase stores only submission metadata and the private Drive file ID. Upload finalization verifies the user, class, assignment, allowed file type/size, due date, attempt number, target folder, and Drive object before recording the submission.
 
@@ -99,3 +99,12 @@ Use only the Supabase publishable/anon key in Vercel; never set a service-role k
 - Shared resources are grouped by Learning Aim with filters, search, video/PDF support, and criterion-linked helpful materials.
 - The Unit Leader can manage resources, announcements, and reusable feedback snippets.
 - Existing resources, announcements, attempts, and legacy assessment records are retained during portal migration.
+
+
+## Final launch steps
+
+1. In Vercel Project Settings → Environment Variables, set `VITE_SUPABASE_URL` to `https://kcuawkpihnijjayywidk.supabase.co` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the active `sb_publishable_...` key from Supabase Project Settings → API Keys. Apply both to Production, Preview, and Development, then redeploy. Never use a Supabase service-role key in a `VITE_` variable.
+2. In Supabase Edge Function Secrets, add `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `DRIVE_API_KEY`, and `DRIVE_CLOUD_PROJECT_NUMBER`. Set `DRIVE_ALLOWED_ORIGINS` to the comma-separated portal origins actually used; at minimum include `https://student-resource-hub-eta.vercel.app`. Enter OAuth secrets only in the dashboard, not in GitHub or chat. The required Google OAuth redirect URI is `https://kcuawkpihnijjayywidk.supabase.co/functions/v1/drive-oauth`.
+3. Enable Supabase leaked-password protection in the Authentication password-security settings; it is currently disabled. See [Supabase leaked-password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+4. Sign in as Unit Leader, connect the Google account, and map the 12 restricted class folders. Test one student upload and an authorized Assessor preview/download.
+5. Only after that test, apply `supabase/manual/disable_legacy_supabase_submission_writes.sql` to stop new Supabase Storage submissions. Historical private submissions remain readable.
