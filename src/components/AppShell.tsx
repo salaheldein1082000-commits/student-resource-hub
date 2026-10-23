@@ -14,6 +14,7 @@ import {
   ClipboardCheck,
   UserCog,
   HardDrive,
+  Bot,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/auth";
@@ -107,6 +108,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 activeProps={{ className: activeCls }}
               >
                 <ClipboardList className="h-4 w-4" /> {t("assignments")}
+              </Link>
+              <Link
+                to="/manage/ai-assessment"
+                className={linkCls}
+                activeProps={{ className: activeCls }}
+              >
+                <Bot className="h-4 w-4" /> AI assessment
               </Link>
               <Link
                 to="/manage/resources"
