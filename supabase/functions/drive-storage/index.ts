@@ -85,7 +85,7 @@ async function authenticate(req: Request) {
     throw new HttpError("Your portal session is invalid or expired.", 401);
   const { data: profile, error: profileError } = await admin
     .from("profiles")
-    .select("role, class_id, email")
+    .select("role, class_id, email, full_name")
     .eq("id", authData.user.id)
     .maybeSingle();
   if (profileError || !profile)
@@ -93,7 +93,12 @@ async function authenticate(req: Request) {
   return {
     admin,
     user: authData.user,
-    profile: profile as { role: string; class_id: string | null; email: string | null },
+    profile: profile as {
+      role: string;
+      class_id: string | null;
+      email: string | null;
+      full_name: string | null;
+    },
     token,
   };
 }
@@ -177,13 +182,14 @@ function slug(value: string): string {
 
 function makeDriveFileName(
   className: string,
-  studentCode: string,
+  studentName: string,
   assignmentTitle: string,
   attempt: number,
   extension: string,
 ): string {
   const classSlug = slug(className).slice(0, 32);
-  return `${classSlug}-${studentCode}-${slug(assignmentTitle)}-attempt-${attempt}.${extension}`;
+  const studentSlug = slug(studentName).slice(0, 56);
+  return `${classSlug}-${studentSlug}-${slug(assignmentTitle)}-attempt-${attempt}.${extension}`;
 }
 
 function safeHeaderFileName(value: string): string {
@@ -357,14 +363,14 @@ async function initiateUpload(req: Request, payload: Record<string, unknown>): P
     );
   if (submissionError) throw new HttpError("Could not determine the next submission attempt.", 500);
 
-  const studentCode = user.email?.match(/^([0-9]{6})@student\.local$/i)?.[1];
-  if (!studentCode)
-    throw new HttpError("Your student code could not be verified for the private file name.", 403);
+  const studentName = profile.full_name?.trim();
+  if (!studentName)
+    throw new HttpError("Your student name could not be verified for the private file name.", 403);
   const lastAttempt = (lastRows ?? [])[0] as { attempt_no: number; status: string } | undefined;
   const attemptNo = (lastAttempt?.attempt_no ?? 0) + 1;
   const driveFileName = makeDriveFileName(
     classRow.name,
-    studentCode,
+    studentName,
     assignment.title,
     attemptNo,
     extension,
