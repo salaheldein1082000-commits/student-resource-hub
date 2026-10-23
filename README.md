@@ -27,7 +27,7 @@ The portal contains 12 classes. Class 10 is approved for 21 students; the other 
 
 ## Private Google Drive activation
 
-The OAuth client secret and refresh token must never be committed, placed in a `VITE_` variable, or sent in chat. Configure the OAuth client in Google Cloud and enter the server-side values directly in the Supabase Dashboard.
+The OAuth client secret and refresh token must never be committed, placed in a `VITE_` variable, or sent in chat. Configure the OAuth client in Google Cloud and enter server-side values directly in the Supabase Dashboard.
 
 ### Google Cloud setup
 
@@ -37,31 +37,30 @@ The OAuth client secret and refresh token must never be committed, placed in a `
 
    `https://kcuawkpihnijjayywidk.supabase.co/functions/v1/drive-oauth`
 
-4. Add the portal's deployed site URL under **Authorized JavaScript origins** (for example `https://aimwise-learning-hub.lovable.app` and the final Vercel origin once known). For local testing, add `http://localhost:5173`.
-5. Create a Google API key for Google Picker, restrict it to the portal's JavaScript origins and the Picker API, and note the Google Cloud **project number**. The project number, not the project ID, is used by Picker.
-6. Keep the Drive root and all class folders restricted. The portal does not alter sharing settings.
+4. Add this exact **Authorized JavaScript origin**: `https://unit1-offecial-portal.vercel.app`. For local testing, also add `http://localhost:5173`.
+5. Create a separate Google **API key** for Picker (this is not the OAuth Client ID or Client Secret). Restrict the key to the Google Picker API and the portal's website/referrer, including `https://unit1-offecial-portal.vercel.app/*`. Create it in the same Google Cloud project as the OAuth client.
+6. Find that Cloud project's numeric **Project number** in Google Cloud project information. Use the number, not the project ID or project name.
+7. Keep the Drive root and all class folders restricted. The portal does not alter sharing settings.
 
 ### Supabase Edge Function secrets
 
-In the Supabase project `kcuawkpihnijjayywidk`, open **Project Settings → Edge Functions → Secrets** and add these values directly in the dashboard:
+In the Supabase project `kcuawkpihnijjayywidk`, open **Project Settings → Edge Functions → Secrets**. The OAuth Client ID and Client Secret are already configured by the Unit Leader. Add the following remaining settings:
 
-- `GOOGLE_OAUTH_CLIENT_ID` — Web OAuth Client ID.
-- `GOOGLE_OAUTH_CLIENT_SECRET` — Web OAuth Client Secret.
-- `DRIVE_API_KEY` — restricted Google Picker API key.
-- `DRIVE_CLOUD_PROJECT_NUMBER` — numeric Google Cloud project number.
-- `DRIVE_ALLOWED_ORIGINS` — comma-separated exact origins allowed to call the portal functions, such as `https://aimwise-learning-hub.lovable.app,http://localhost:5173`; add the final Vercel origin before using the Vercel deployment.
+- `DRIVE_API_KEY` — the restricted Google Picker API key created above. The server supplies it to the authenticated Unit Leader's Picker session; it must be restricted by website/referrer and API.
+- `DRIVE_CLOUD_PROJECT_NUMBER` — the numeric Google Cloud project number for the same project as the OAuth client and API key. Google Picker calls this `appId`; it is not a secret.
+- `DRIVE_ALLOWED_ORIGINS` — an exact, comma-separated allowlist of portal browser origins accepted by the Edge Functions for CORS and the OAuth return URL. Set it to `https://unit1-offecial-portal.vercel.app`. If using the local Vite app too, set it to `https://unit1-offecial-portal.vercel.app,http://localhost:5173`. Do not add a path or trailing slash. This is configuration, not a credential.
 
 Supabase provides its project URL and server keys to Edge Functions at runtime. Do not copy the service-role key into the browser or add it as a Vercel variable. Do not add any Google credential as a `VITE_` variable.
 
 ### Connect and map folders
 
-After the migration and both Edge Functions are deployed and the secrets are present, a Unit Leader opens **Manage → Google Drive storage**, selects **Connect Google Drive**, and authorizes the intended Drive account. Use **Select private folder** for each class to choose its restricted folder in Google Picker. Map all 12 classes and verify their mapped state before students upload. The Picker grants the app access to the selected folders; the portal does not make those folders or files public.
+After the migration and both Edge Functions are deployed and the required secrets/configuration are present, a Unit Leader opens **Manage → Google Drive storage**, selects **Connect Google Drive**, and authorizes the intended Drive account. Use **Select private folder** for each class to choose its restricted folder in Google Picker. Map all 12 classes and verify their mapped state before students upload. The Picker grants the app access to the selected folders; the portal does not make those folders or files public.
 
 ### Safe production rollout order
 
-The currently deployed frontend still writes new submissions directly to Supabase Storage. The additive Drive migration intentionally preserves those old write policies so the live portal keeps working during transition. Apply the core schema migration and deploy both Edge Functions first, add the Google/Supabase secrets, then deploy the Vite frontend. Connect Drive and map the 12 private class folders; test a student upload and an authorized Assessor download before removing the old write path. Only after that test, apply `supabase/manual/disable_legacy_supabase_submission_writes.sql` as a separate cutover. It removes student INSERT policies for new Supabase-backed submissions but preserves SELECT access to all historical private files. Do not apply that manual cutover while the old frontend is still serving students.
+Both additive migrations and both Edge Functions are deployed. Existing Supabase submission write policies intentionally remain enabled during the transition. Add the browser build variables and Google Picker settings, connect Drive and map all 12 folders, then test a student upload and an authorized Assessor download before removing the old write path. Only after that test, apply `supabase/manual/disable_legacy_supabase_submission_writes.sql` as a separate cutover. It removes student INSERT policies for new Supabase-backed submissions but preserves SELECT access to historical private files. Do not apply that manual cutover while students may still be using the old submission flow.
 
-Current project status (2026-10-23): the additive migration and both Edge Functions are deployed to the `Unit1` Supabase project. GitHub commit `c944ec2` is deployed to Vercel production and is marked **Ready** at `https://student-resource-hub-eta.vercel.app`, but the Vercel project currently has no environment variables. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in Vercel Project Settings → Environment Variables, then redeploy before using the portal. Google Cloud APIs/credentials, class-folder mapping, and the end-to-end test remain. The manual Supabase-write cutover has **not** been applied.
+Current status (2026-10-23): the production portal origin confirmed by the Unit Leader is `https://unit1-offecial-portal.vercel.app`. The linked Vercel project reported a **Ready** production build. At the last Vercel environment check, no browser variables were configured, so add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` if they are not already present and redeploy. The OAuth Client ID/Secret are configured in Supabase; Picker key, Cloud project number, allowed origin, folder mapping, and end-to-end testing remain. The manual Supabase-write cutover has not been applied.
 
 New files are named using class, six-digit student code, assignment slug, and attempt number. The browser uploads file bytes directly to a Google resumable-upload session; Supabase stores only submission metadata and the private Drive file ID. Upload finalization verifies the user, class, assignment, allowed file type/size, due date, attempt number, target folder, and Drive object before recording the submission.
 
@@ -69,7 +68,7 @@ Existing submissions already stored in the private Supabase Storage bucket are n
 
 ## Data, security, and local development
 
-The additive Drive migration is `supabase/migrations/20261022120000_private_google_drive_submissions.sql`. It adds service-only Drive folder mappings, OAuth states, upload sessions, Vault token RPCs, storage metadata, and a submission guard that preserves the old Supabase Storage path. The post-launch policy cutover is kept separately in `supabase/manual/disable_legacy_supabase_submission_writes.sql`. Drive IDs are not public URLs. The functions are in `supabase/functions/drive-oauth` and `supabase/functions/drive-storage`; `supabase/config.toml` leaves OAuth callback JWT validation off only because OAuth state is checked by the function, while the storage function requires JWT validation and verifies the caller's role or row access.
+The core Drive migration is `supabase/migrations/20261022120000_private_google_drive_submissions.sql`; the follow-up migration `supabase/migrations/20261023120000_drive_indexes_and_student_reimport_safety.sql` adds indexes and prevents CSV reimports from resetting existing student passwords. The post-launch policy cutover is kept separately in `supabase/manual/disable_legacy_supabase_submission_writes.sql`. Drive IDs are not public URLs. The functions are in `supabase/functions/drive-oauth` and `supabase/functions/drive-storage`; `supabase/config.toml` leaves OAuth callback JWT validation off only because OAuth state is checked by the function, while the storage function requires JWT validation and verifies the caller's role or row access.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -92,7 +91,7 @@ Import this GitHub repository in Vercel and use the Vite preset. `pnpm build` pr
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-Use only the Supabase publishable/anon key in Vercel; never set a service-role key as a `VITE_` variable. After deployment, configure the deployed origin in Supabase Auth URL settings, Google OAuth **Authorized JavaScript origins**, and `DRIVE_ALLOWED_ORIGINS`. Confirm the final Drive mapping and test direct refreshes on `/manage/drive` and `/manage/submissions/<submission-id>`.
+Use only the Supabase publishable/anon key in Vercel; never set a service-role key as a `VITE_` variable. After deployment, configure `https://unit1-offecial-portal.vercel.app` in Supabase Auth URL settings, Google OAuth **Authorized JavaScript origins**, and `DRIVE_ALLOWED_ORIGINS`. Confirm the final Drive mapping and test direct refreshes on `/manage/drive` and `/manage/submissions/<submission-id>`.
 
 ## Existing resource hub
 
@@ -100,11 +99,10 @@ Use only the Supabase publishable/anon key in Vercel; never set a service-role k
 - The Unit Leader can manage resources, announcements, and reusable feedback snippets.
 - Existing resources, announcements, attempts, and legacy assessment records are retained during portal migration.
 
-
 ## Final launch steps
 
 1. In Vercel Project Settings → Environment Variables, set `VITE_SUPABASE_URL` to `https://kcuawkpihnijjayywidk.supabase.co` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the active `sb_publishable_...` key from Supabase Project Settings → API Keys. Apply both to Production, Preview, and Development, then redeploy. Never use a Supabase service-role key in a `VITE_` variable.
-2. In Supabase Edge Function Secrets, add `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `DRIVE_API_KEY`, and `DRIVE_CLOUD_PROJECT_NUMBER`. Set `DRIVE_ALLOWED_ORIGINS` to the comma-separated portal origins actually used; at minimum include `https://student-resource-hub-eta.vercel.app`. Enter OAuth secrets only in the dashboard, not in GitHub or chat. The required Google OAuth redirect URI is `https://kcuawkpihnijjayywidk.supabase.co/functions/v1/drive-oauth`.
+2. In Supabase Edge Function Secrets, add `DRIVE_API_KEY` and `DRIVE_CLOUD_PROJECT_NUMBER`; the OAuth Client ID/Secret are already configured. Set `DRIVE_ALLOWED_ORIGINS=https://unit1-offecial-portal.vercel.app` (append `,http://localhost:5173` only if needed for local development). The required Google OAuth redirect URI is `https://kcuawkpihnijjayywidk.supabase.co/functions/v1/drive-oauth`.
 3. Enable Supabase leaked-password protection in the Authentication password-security settings; it is currently disabled. See [Supabase leaked-password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
 4. Sign in as Unit Leader, connect the Google account, and map the 12 restricted class folders. Test one student upload and an authorized Assessor preview/download.
 5. Only after that test, apply `supabase/manual/disable_legacy_supabase_submission_writes.sql` to stop new Supabase Storage submissions. Historical private submissions remain readable.

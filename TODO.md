@@ -37,7 +37,8 @@
 - [x] Keep the initial schema migration backward-compatible with the currently live frontend; stage the disabling of old student Supabase write policies separately.
 - [x] Apply the additive migration `supabase/migrations/20261022120000_private_google_drive_submissions.sql` and deploy both Supabase Edge Functions to the `Unit1` project. The old write policies remain active.
 - [x] Local checks passed: changed-file ESLint, TypeScript, 18 Vitest tests, Vite production build, and Deno checks for both Edge Functions.
-- [ ] In Google Cloud, enable Drive API and Picker API, configure OAuth redirect URI `https://kcuawkpihnijjayywidk.supabase.co/functions/v1/drive-oauth` and browser origins, then add the OAuth Client ID/Secret, restricted Picker API key/project number, and `DRIVE_ALLOWED_ORIGINS` to Supabase Edge Function Secrets.
+- [x] OAuth Client ID and Client Secret added to Supabase Edge Function Secrets by the Unit Leader.
+- [ ] In Google Cloud, enable Drive API and Picker API, configure redirect URI `https://kcuawkpihnijjayywidk.supabase.co/functions/v1/drive-oauth` and JavaScript origin `https://unit1-offecial-portal.vercel.app`, then create/restrict a Picker API key and note the Cloud project number. Add `DRIVE_API_KEY`, `DRIVE_CLOUD_PROJECT_NUMBER`, and `DRIVE_ALLOWED_ORIGINS=https://unit1-offecial-portal.vercel.app` to Supabase Edge Function Secrets.
 - [ ] After the Vercel variables are added and frontend redeployed, connect the Unit Leader Google account and map all 12 restricted class folders.
 - [ ] Test a student upload and an authorized Assessor download/preview end to end.
 - [ ] Only after the new portal is live and tested, apply `supabase/manual/disable_legacy_supabase_submission_writes.sql`; it blocks new Supabase-backed student uploads but retains read access to old private submissions.

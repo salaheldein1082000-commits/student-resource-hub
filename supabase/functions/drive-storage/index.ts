@@ -22,7 +22,7 @@ function env(name: string): string {
 function allowedOrigins(): Set<string> {
   const configured =
     Deno.env.get("DRIVE_ALLOWED_ORIGINS") ??
-    "https://aimwise-learning-hub.lovable.app,http://localhost:5173";
+    "https://unit1-offecial-portal.vercel.app,http://localhost:5173";
   return new Set(
     configured
       .split(",")
