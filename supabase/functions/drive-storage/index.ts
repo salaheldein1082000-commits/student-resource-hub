@@ -4,6 +4,7 @@ const PDF_MIME = "application/pdf";
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const MAX_BYTES = 20 * 1024 * 1024;
 const FOLDER_MIME = "application/vnd.google-apps.folder";
+const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
 
 class HttpError extends Error {
   status: number;
@@ -669,6 +670,118 @@ async function deleteSubmission(req: Request, payload: Record<string, unknown>):
   return json(req, 200, { deleted: true });
 }
 
+function base64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunk)
+    binary += String.fromCharCode(...bytes.subarray(index, Math.min(index + chunk, bytes.length)));
+  return btoa(binary);
+}
+
+async function readSubmissionBytes(
+  admin: ReturnType<typeof adminClient>,
+  submission: Record<string, unknown>,
+): Promise<Uint8Array> {
+  if (submission.storage_provider === "supabase") {
+    const file = await admin.storage.from("submissions").download(String(submission.file_url));
+    if (file.error || !file.data) throw new HttpError("The submission file could not be read.", 502);
+    return new Uint8Array(await file.data.arrayBuffer());
+  }
+  if (submission.storage_provider === "google_drive" && typeof submission.drive_file_id === "string") {
+    const token = await driveAccessToken(admin);
+    const url = driveApiUrl(submission.drive_file_id, { alt: "media" });
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!response.ok) throw new HttpError("Google Drive could not read the submission file.", 502);
+    return new Uint8Array(await response.arrayBuffer());
+  }
+  throw new HttpError("This submission does not have a readable file.", 409);
+}
+
+async function assessWithGemini(
+  req: Request,
+  payload: Record<string, unknown>,
+): Promise<Response> {
+  const { admin, user, profile } = await authenticate(req);
+  if (profile.role !== "unit_leader" && profile.role !== "engineer")
+    throw new HttpError("Only assessors and Unit Leaders can run AI assessment.", 403);
+  const settings = await admin.from("portal_settings").select("ai_assessment_enabled").eq("id", true).maybeSingle();
+  if (settings.error || settings.data?.ai_assessment_enabled !== true)
+    throw new HttpError("AI assessment is currently disabled by the Unit Leader.", 409);
+  const submissionId = typeof payload.submissionId === "string" ? payload.submissionId : "";
+  if (!/^[0-9a-f-]{36}$/i.test(submissionId)) throw new HttpError("The submission identifier is not valid.");
+
+  const { data: submission, error: submissionError } = await admin
+    .from("submissions")
+    .select("id, assignment_id, storage_provider, file_url, drive_file_id, mime_type, file_size_bytes")
+    .eq("id", submissionId)
+    .maybeSingle();
+  if (submissionError || !submission) throw new HttpError("The submission was not found.", 404);
+  const [{ data: assignment }, { data: config }, { data: rubric }] = await Promise.all([
+    admin.from("assignments").select("id, title, brief").eq("id", submission.assignment_id).maybeSingle(),
+    admin.from("ai_assignment_configs").select("enabled, model_answer, marking_guidance").eq("assignment_id", submission.assignment_id).maybeSingle(),
+    admin.from("ai_rubric_items").select("criterion_id, max_points, guidance, model_answer, criteria(code, description)").eq("assignment_id", submission.assignment_id).order("sort_order"),
+  ]);
+  if (!assignment || !config || config.enabled !== true || !rubric?.length)
+    throw new HttpError("Configure and enable the AI rubric for this assignment first.", 409);
+  const bytes = await readSubmissionBytes(admin, submission as Record<string, unknown>);
+  if (bytes.byteLength > MAX_BYTES) throw new HttpError("The submission is too large for AI review (20 MB maximum).", 413);
+
+  const model = Deno.env.get("GEMINI_MODEL") || DEFAULT_GEMINI_MODEL;
+  const run = await admin.from("ai_assessment_runs").insert({
+    submission_id: submissionId,
+    assignment_id: submission.assignment_id,
+    provider: "google_gemini",
+    model,
+    status: "running",
+    started_by: user.id,
+  }).select("id").single();
+  if (run.error || !run.data) throw new HttpError("The AI assessment run could not be started.", 500);
+
+  const items = (rubric as Array<Record<string, unknown>>).map((item) => ({
+    criterion_code: (item.criteria as Record<string, unknown> | null)?.code,
+    criterion_description: (item.criteria as Record<string, unknown> | null)?.description,
+    max_points: item.max_points,
+    marking_guidance: item.guidance,
+    criterion_model_answer: item.model_answer,
+  }));
+  const prompt = `You are an assessment assistant. Grade only against the supplied rubric. Do not invent evidence. Return a cautious recommendation for a human assessor. The recommendation is not a final grade.\n\nAssignment: ${assignment.title}\nAssignment brief: ${assignment.brief ?? ""}\nOverall model answer: ${config.model_answer}\nOverall marking guidance: ${config.marking_guidance}\nRubric: ${JSON.stringify(items)}\n\nFor each criterion, award an integer from 0 to max_points, quote concise evidence from the submission, explain the decision, and suggest feedback. Also give a total and an overall summary.`;
+  const schema = {
+    type: "object",
+    properties: {
+      total_points: { type: "integer", minimum: 0 },
+      overall_summary: { type: "string" },
+      criteria: { type: "array", items: { type: "object", properties: {
+        criterion_code: { type: "string" }, suggested_points: { type: "integer", minimum: 0 },
+        evidence: { type: "string" }, reasoning: { type: "string" }, feedback: { type: "string" },
+        confidence: { type: "string", enum: ["low", "medium", "high"] },
+      }, required: ["criterion_code", "suggested_points", "evidence", "reasoning", "feedback", "confidence"], additionalProperties: false } },
+    }, required: ["total_points", "overall_summary", "criteria"], additionalProperties: false,
+  };
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": env("GEMINI_API_KEY") },
+      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }, { inline_data: { mime_type: submission.mime_type || DOCX_MIME, data: base64(bytes) } }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.1 } }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body?.error?.message || "Gemini returned an error.");
+    const text = body?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text || "").join("");
+    if (!text) throw new Error("Gemini returned no assessment result.");
+    const result = JSON.parse(text);
+    const maxByCode = new Map(items.map((item) => [String(item.criterion_code), Number(item.max_points)]));
+    result.criteria = Array.isArray(result.criteria) ? result.criteria.map((item: Record<string, unknown>) => ({
+      ...item,
+      suggested_points: Math.max(0, Math.min(Number(item.suggested_points) || 0, maxByCode.get(String(item.criterion_code)) ?? 0)),
+    })) : [];
+    const { error: saveError } = await admin.from("ai_assessment_runs").update({ status: "completed", result, completed_at: new Date().toISOString() }).eq("id", run.data.id);
+    if (saveError) throw saveError;
+    return json(req, 200, { runId: run.data.id, result });
+  } catch (error) {
+    await admin.from("ai_assessment_runs").update({ status: "failed", error_message: error instanceof Error ? error.message : "Gemini assessment failed.", completed_at: new Date().toISOString() }).eq("id", run.data.id);
+    throw new HttpError(error instanceof Error ? error.message : "Gemini assessment failed.", 502);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     const origin = req.headers.get("origin");
@@ -699,6 +812,8 @@ Deno.serve(async (req: Request) => {
         return await downloadSubmission(req, payload);
       case "delete_submission":
         return await deleteSubmission(req, payload);
+      case "ai_assess_submission":
+        return await assessWithGemini(req, payload);
       default:
         throw new HttpError("Unknown Drive storage action.");
     }
