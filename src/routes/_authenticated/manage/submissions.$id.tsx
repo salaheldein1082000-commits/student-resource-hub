@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Download, FileText, Printer, Save, Send, ShieldCheck } from "lucide-react";
+import { Download, FileText, Printer, Save, Send, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/AppShell";
 import { useMe } from "@/lib/auth";
 import { useLocale } from "@/lib/locale";
 import { printFeedbackAsPdf } from "@/lib/feedbackPdf";
+import { supabase } from "@/integrations/supabase/client";
 import { getDriveSubmissionFile, openDriveSubmissionFile } from "@/lib/drive";
 import {
   portalAssignmentByIdQuery,
@@ -37,6 +38,7 @@ type Preview = { kind: "pdf"; url: string } | { kind: "docx"; text: string };
 function GradeSubmission() {
   const { id } = Route.useParams();
   const { data: me } = useMe();
+  const navigate = useNavigate();
   const { t, locale } = useLocale();
   const queryClient = useQueryClient();
   const submissionQuery = useQuery(portalSubmissionByIdQuery(id));
@@ -363,6 +365,30 @@ function GradeSubmission() {
     }
   }
 
+  async function deleteSubmission() {
+    if (
+      !window.confirm(
+        "Delete this submission permanently? Its stored file, assessment feedback, and submission record will be removed. This cannot be undone.",
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("drive-storage", {
+        body: { action: "delete_submission", submissionId: currentSubmission.id },
+      });
+      if (error) throw error;
+      if (!data?.deleted) throw new Error("The submission was not deleted.");
+      toast.success("Submission and stored file deleted.");
+      await queryClient.invalidateQueries({ queryKey: ["portal", "submissions"] });
+      navigate({ to: "/manage/submissions" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete the submission.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function exportPublishedFeedback() {
     const summary = assessmentQuery.data?.summary;
     if (!summary?.published) return;
@@ -524,6 +550,9 @@ function GradeSubmission() {
           disabled={busy || submission.status !== "graded"}
         >
           <ShieldCheck className="h-4 w-4" /> {t("allowResubmission")}
+        </Button>
+        <Button variant="destructive" onClick={() => void deleteSubmission()} disabled={busy}>
+          <Trash2 className="h-4 w-4" /> Delete submission
         </Button>
       </div>
       {submission.status === "resubmission_allowed" && (
