@@ -388,58 +388,80 @@ async function initiateUpload(req: Request, payload: Record<string, unknown>): P
   });
   if (sessionError) throw new HttpError("Could not create a secure Drive upload session.", 500);
 
-  try {
-    const token = await driveAccessToken(admin);
-    const origin = req.headers.get("origin");
-    const uploadResponse = await fetch(
-      "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true&fields=id,name,mimeType,size,parents,appProperties",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json; charset=UTF-8",
-          "X-Upload-Content-Type": mimeType,
-          "X-Upload-Content-Length": String(size),
-          ...(origin ? { Origin: origin } : {}),
-        },
-        body: JSON.stringify({
-          name: driveFileName,
-          mimeType,
-          parents: [mapping.drive_folder_id],
-          appProperties: {
-            btecPortal: "unit1-assessment",
-            btecStudentId: user.id,
-            btecAssignmentId: assignmentId,
-            btecUploadSession: uploadSessionId,
-          },
-        }),
+  return json(req, 200, {
+    uploadSessionId,
+    attemptNo,
+    fileName: driveFileName,
+    mimeType,
+  });
+}
+
+async function uploadFile(req: Request): Promise<Response> {
+  const { admin, user, profile } = await authenticate(req);
+  if (profile.role !== "student")
+    throw new HttpError("Only student accounts can upload coursework files.", 403);
+  const form = await req.formData();
+  const sessionId = typeof form.get("uploadSessionId") === "string" ? form.get("uploadSessionId") as string : "";
+  const fileValue = form.get("file");
+  if (!/^[0-9a-f-]{36}$/i.test(sessionId) || !(fileValue instanceof File))
+    throw new HttpError("The coursework file upload is invalid.");
+  const { data: session, error: sessionError } = await admin
+    .from("drive_upload_sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (sessionError || !session) throw new HttpError("The Drive upload session was not found.", 404);
+  if (session.status !== "pending" || new Date(session.expires_at).getTime() <= Date.now())
+    throw new HttpError("The Drive upload session expired. Start a new submission attempt.", 409);
+  if (fileValue.size !== Number(session.file_size_bytes))
+    throw new HttpError("The uploaded file size does not match the secure upload session.");
+
+  const token = await driveAccessToken(admin);
+  const uploadResponse = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true&fields=id,name,mimeType,size,parents,appProperties",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json; charset=UTF-8",
+        "X-Upload-Content-Type": session.mime_type,
+        "X-Upload-Content-Length": String(fileValue.size),
       },
+      body: JSON.stringify({
+        name: session.drive_file_name,
+        mimeType: session.mime_type,
+        parents: [session.drive_folder_id],
+        appProperties: {
+          btecPortal: "unit1-assessment",
+          btecStudentId: user.id,
+          btecAssignmentId: session.assignment_id,
+          btecUploadSession: sessionId,
+        },
+      }),
+    },
+  );
+  const uploadUrl = uploadResponse.headers.get("location");
+  if (!uploadResponse.ok || !uploadUrl)
+    throw new HttpError(
+      "Google Drive could not start a resumable upload. Check the connected account and folder permissions.",
+      502,
     );
-    const uploadUrl = uploadResponse.headers.get("location");
-    if (!uploadResponse.ok || !uploadUrl) {
-      await admin
-        .from("drive_upload_sessions")
-        .update({ status: "expired" })
-        .eq("id", uploadSessionId);
-      throw new HttpError(
-        "Google Drive could not start a resumable upload. Check the connected account and folder permissions.",
-        502,
-      );
-    }
-    return json(req, 200, {
-      uploadUrl,
-      uploadSessionId,
-      attemptNo,
-      fileName: driveFileName,
-      mimeType,
-    });
-  } catch (error) {
-    await admin
-      .from("drive_upload_sessions")
-      .update({ status: "expired" })
-      .eq("id", uploadSessionId);
-    throw error;
+  const driveUpload = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": session.mime_type,
+      "Content-Length": String(fileValue.size),
+    },
+    body: await fileValue.arrayBuffer(),
+  });
+  if (!driveUpload.ok) {
+    const reason = (await driveUpload.text().catch(() => "")).slice(0, 300);
+    throw new HttpError(reason ? `Google Drive upload failed: ${reason}` : "Google Drive upload failed.", 502);
   }
+  const uploaded = (await driveUpload.json().catch(() => ({}))) as { id?: unknown };
+  if (typeof uploaded.id !== "string") throw new HttpError("Google Drive did not return the uploaded file identifier.", 502);
+  return json(req, 200, { driveFileId: uploaded.id });
 }
 
 async function finalizeUpload(req: Request, payload: Record<string, unknown>): Promise<Response> {
@@ -601,6 +623,11 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json(req, 405, { error: "Method not allowed." });
   try {
     assertOrigin(req);
+    if (req.headers.get("content-type")?.toLowerCase().startsWith("multipart/form-data")) {
+      const form = await req.clone().formData();
+      if (form.get("action") === "upload_file") return await uploadFile(req);
+      throw new HttpError("Unknown Drive storage action.");
+    }
     const payload = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     switch (payload.action) {
       case "status":
@@ -609,6 +636,8 @@ Deno.serve(async (req: Request) => {
         return await saveClassFolder(req, payload);
       case "initiate_upload":
         return await initiateUpload(req, payload);
+      case "upload_file":
+        return await uploadFile(req);
       case "finalize_upload":
         return await finalizeUpload(req, payload);
       case "download":
