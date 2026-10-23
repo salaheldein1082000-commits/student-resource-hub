@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/AppShell";
 import { useMe } from "@/lib/auth";
 import { useLocale } from "@/lib/locale";
 import { printFeedbackAsPdf } from "@/lib/feedbackPdf";
+import { getDriveSubmissionFile, openDriveSubmissionFile } from "@/lib/drive";
 import {
   portalAssignmentByIdQuery,
   portalDb,
@@ -76,7 +77,17 @@ function GradeSubmission() {
   const previewQuery = useQuery({
     queryKey: ["portal", "submission-preview", id, submission?.file_url],
     enabled: !!submission?.file_url,
+    gcTime: 0,
     queryFn: async (): Promise<Preview> => {
+      if (submission!.storage_provider === "google_drive") {
+        const file = await getDriveSubmissionFile(submission!.id);
+        if (file.mimeType === "application/pdf") {
+          return { kind: "pdf", url: URL.createObjectURL(file.blob) };
+        }
+        const mammoth = await import("mammoth");
+        const result = await mammoth.extractRawText({ arrayBuffer: await file.blob.arrayBuffer() });
+        return { kind: "docx", text: result.value };
+      }
       const url = await signedStorageUrl("submissions", submission!.file_url);
       if (submission!.file_url.toLowerCase().endsWith(".pdf")) return { kind: "pdf", url };
       const response = await fetch(url);
@@ -87,6 +98,12 @@ function GradeSubmission() {
       return { kind: "docx", text: result.value };
     },
   });
+
+  useEffect(() => {
+    const preview = previewQuery.data;
+    if (preview?.kind !== "pdf" || !preview.url.startsWith("blob:")) return;
+    return () => URL.revokeObjectURL(preview.url);
+  }, [previewQuery.data]);
 
   const criteria = useMemo(
     () =>
@@ -336,7 +353,11 @@ function GradeSubmission() {
 
   async function downloadFile() {
     try {
-      await openSubmissionFile("submissions", currentSubmission.file_url);
+      if (currentSubmission.storage_provider === "google_drive") {
+        await openDriveSubmissionFile(currentSubmission.id, true);
+      } else {
+        await openSubmissionFile("submissions", currentSubmission.file_url);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not open the submission file.");
     }

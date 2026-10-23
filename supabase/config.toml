@@ -1,1 +1,7 @@
 project_id = "kcuawkpihnijjayywidk"
+
+[functions.drive-oauth]
+verify_jwt = false
+
+[functions.drive-storage]
+verify_jwt = true

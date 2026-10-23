@@ -22,6 +22,7 @@ import { Route as AuthenticatedManageAnnouncementsRouteImport } from './routes/_
 import { Route as AuthenticatedManageAssessorsRouteImport } from './routes/_authenticated/manage/assessors'
 import { Route as AuthenticatedManageAssignmentsRouteImport } from './routes/_authenticated/manage/assignments'
 import { Route as AuthenticatedManageClassesRouteImport } from './routes/_authenticated/manage/classes'
+import { Route as AuthenticatedManageDriveRouteImport } from './routes/_authenticated/manage/drive'
 import { Route as AuthenticatedManageImportRouteImport } from './routes/_authenticated/manage/import'
 import { Route as AuthenticatedManageResourcesRouteImport } from './routes/_authenticated/manage/resources'
 import { Route as AuthenticatedManageSnippetsRouteImport } from './routes/_authenticated/manage/snippets'
@@ -98,6 +99,12 @@ const AuthenticatedManageClassesRoute =
     path: '/classes',
     getParentRoute: () => AuthenticatedManageRouteRoute,
   } as any)
+const AuthenticatedManageDriveRoute =
+  AuthenticatedManageDriveRouteImport.update({
+    id: '/drive',
+    path: '/drive',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
+  } as any)
 const AuthenticatedManageImportRoute =
   AuthenticatedManageImportRouteImport.update({
     id: '/import',
@@ -142,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/manage/assessors': typeof AuthenticatedManageAssessorsRoute
   '/manage/assignments': typeof AuthenticatedManageAssignmentsRoute
   '/manage/classes': typeof AuthenticatedManageClassesRoute
+  '/manage/drive': typeof AuthenticatedManageDriveRoute
   '/manage/import': typeof AuthenticatedManageImportRoute
   '/manage/resources': typeof AuthenticatedManageResourcesRoute
   '/manage/snippets': typeof AuthenticatedManageSnippetsRoute
@@ -161,6 +169,7 @@ export interface FileRoutesByTo {
   '/manage/assessors': typeof AuthenticatedManageAssessorsRoute
   '/manage/assignments': typeof AuthenticatedManageAssignmentsRoute
   '/manage/classes': typeof AuthenticatedManageClassesRoute
+  '/manage/drive': typeof AuthenticatedManageDriveRoute
   '/manage/import': typeof AuthenticatedManageImportRoute
   '/manage/resources': typeof AuthenticatedManageResourcesRoute
   '/manage/snippets': typeof AuthenticatedManageSnippetsRoute
@@ -182,6 +191,7 @@ export interface FileRoutesById {
   '/_authenticated/manage/assessors': typeof AuthenticatedManageAssessorsRoute
   '/_authenticated/manage/assignments': typeof AuthenticatedManageAssignmentsRoute
   '/_authenticated/manage/classes': typeof AuthenticatedManageClassesRoute
+  '/_authenticated/manage/drive': typeof AuthenticatedManageDriveRoute
   '/_authenticated/manage/import': typeof AuthenticatedManageImportRoute
   '/_authenticated/manage/resources': typeof AuthenticatedManageResourcesRoute
   '/_authenticated/manage/snippets': typeof AuthenticatedManageSnippetsRoute
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/manage/assessors'
     | '/manage/assignments'
     | '/manage/classes'
+    | '/manage/drive'
     | '/manage/import'
     | '/manage/resources'
     | '/manage/snippets'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/manage/assessors'
     | '/manage/assignments'
     | '/manage/classes'
+    | '/manage/drive'
     | '/manage/import'
     | '/manage/resources'
     | '/manage/snippets'
@@ -242,6 +254,7 @@ export interface FileRouteTypes {
     | '/_authenticated/manage/assessors'
     | '/_authenticated/manage/assignments'
     | '/_authenticated/manage/classes'
+    | '/_authenticated/manage/drive'
     | '/_authenticated/manage/import'
     | '/_authenticated/manage/resources'
     | '/_authenticated/manage/snippets'
@@ -349,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManageClassesRouteImport
       parentRoute: typeof AuthenticatedManageRouteRoute
     }
+    '/_authenticated/manage/drive': {
+      id: '/_authenticated/manage/drive'
+      path: '/drive'
+      fullPath: '/manage/drive'
+      preLoaderRoute: typeof AuthenticatedManageDriveRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
+    }
     '/_authenticated/manage/import': {
       id: '/_authenticated/manage/import'
       path: '/import'
@@ -407,6 +427,7 @@ interface AuthenticatedManageRouteRouteChildren {
   AuthenticatedManageAssessorsRoute: typeof AuthenticatedManageAssessorsRoute
   AuthenticatedManageAssignmentsRoute: typeof AuthenticatedManageAssignmentsRoute
   AuthenticatedManageClassesRoute: typeof AuthenticatedManageClassesRoute
+  AuthenticatedManageDriveRoute: typeof AuthenticatedManageDriveRoute
   AuthenticatedManageImportRoute: typeof AuthenticatedManageImportRoute
   AuthenticatedManageResourcesRoute: typeof AuthenticatedManageResourcesRoute
   AuthenticatedManageSnippetsRoute: typeof AuthenticatedManageSnippetsRoute
@@ -420,6 +441,7 @@ const AuthenticatedManageRouteRouteChildren: AuthenticatedManageRouteRouteChildr
     AuthenticatedManageAssessorsRoute: AuthenticatedManageAssessorsRoute,
     AuthenticatedManageAssignmentsRoute: AuthenticatedManageAssignmentsRoute,
     AuthenticatedManageClassesRoute: AuthenticatedManageClassesRoute,
+    AuthenticatedManageDriveRoute: AuthenticatedManageDriveRoute,
     AuthenticatedManageImportRoute: AuthenticatedManageImportRoute,
     AuthenticatedManageResourcesRoute: AuthenticatedManageResourcesRoute,
     AuthenticatedManageSnippetsRoute: AuthenticatedManageSnippetsRoute,

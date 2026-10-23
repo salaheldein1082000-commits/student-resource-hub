@@ -57,6 +57,10 @@ export type PortalSubmission = {
   submitted_at: string;
   attempt_no: number;
   status: "submitted" | "graded" | "resubmission_allowed";
+  storage_provider: "supabase" | "google_drive";
+  original_file_name: string | null;
+  mime_type: string | null;
+  file_size_bytes: number | null;
   profiles?: Pick<PortalProfile, "full_name" | "email" | "group_name" | "class_id"> | null;
   assignments?: Pick<PortalAssignment, "title" | "due_date"> | null;
 };
@@ -165,7 +169,7 @@ export const portalSubmissionsQuery = queryOptions({
       await portalDb
         .from("submissions")
         .select(
-          "id, assignment_id, student_id, file_url, submitted_at, attempt_no, status, profiles(full_name, email, group_name, class_id), assignments(title, due_date)",
+          "id, assignment_id, student_id, file_url, submitted_at, attempt_no, status, storage_provider, original_file_name, mime_type, file_size_bytes, profiles(full_name, email, group_name, class_id), assignments(title, due_date)",
         )
         .order("submitted_at", { ascending: false }),
     ),
@@ -180,7 +184,7 @@ export const portalSubmissionByIdQuery = (submissionId: string) =>
         await portalDb
           .from("submissions")
           .select(
-            "id, assignment_id, student_id, file_url, submitted_at, attempt_no, status, profiles(full_name, email, group_name, class_id), assignments(title, due_date)",
+            "id, assignment_id, student_id, file_url, submitted_at, attempt_no, status, storage_provider, original_file_name, mime_type, file_size_bytes, profiles(full_name, email, group_name, class_id), assignments(title, due_date)",
           )
           .eq("id", submissionId)
           .maybeSingle(),

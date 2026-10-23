@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Download, FileText, Printer, Upload } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/AppShell";
@@ -12,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useMe } from "@/lib/auth";
 import { useLocale } from "@/lib/locale";
 import { printFeedbackAsPdf } from "@/lib/feedbackPdf";
+import { openDriveSubmissionFile, uploadStudentSubmission } from "@/lib/drive";
 import {
   getLatestAttempt,
   isExternalUrl,
@@ -98,7 +98,8 @@ function AssignmentPage() {
 
   async function downloadSubmission(item: PortalSubmission) {
     try {
-      await openSubmissionFile("submissions", item.file_url);
+      if (item.storage_provider === "google_drive") await openDriveSubmissionFile(item.id);
+      else await openSubmissionFile("submissions", item.file_url);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not open the submission file.");
     }
@@ -113,38 +114,14 @@ function AssignmentPage() {
     if (!me || !assignment || !file || !canSubmit) return;
 
     setBusy(true);
-    let uploadedPath: string | null = null;
     try {
-      const safeName = file.name.replace(/[^\w.-]/g, "_");
-      const path = `${me.id}/${assignment.id}/${Date.now()}-${safeName}`;
-      const contentType = file.name.toLowerCase().endsWith(".pdf")
-        ? "application/pdf"
-        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      const upload = await supabase.storage.from("submissions").upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType,
-      });
-      if (upload.error) throw upload.error;
-      uploadedPath = path;
+      const result = await uploadStudentSubmission(assignment.id, file);
 
-      const attemptNo = (latest?.attempt_no ?? 0) + 1;
-      const insert = await portalDb.from("submissions").insert({
-        assignment_id: assignment.id,
-        student_id: me.id,
-        file_url: path,
-        submitted_at: new Date().toISOString(),
-        attempt_no: attemptNo,
-        status: "submitted",
-      });
-      if (insert.error) throw insert.error;
-
-      toast.success(`${t("submitted")} · ${t("attempt")} ${attemptNo}`);
+      toast.success(`${t("submitted")} · ${t("attempt")} ${result.attemptNo}`);
       setFile(null);
       await qc.invalidateQueries({ queryKey: ["portal", "submissions"] });
       await qc.invalidateQueries({ queryKey: ["portal", "published-feedback", id] });
     } catch (error) {
-      if (uploadedPath) await supabase.storage.from("submissions").remove([uploadedPath]);
       toast.error(error instanceof Error ? error.message : "Submission failed.");
     } finally {
       setBusy(false);

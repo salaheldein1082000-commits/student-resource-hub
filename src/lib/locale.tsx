@@ -80,7 +80,22 @@ type MessageKey =
   | "attemptHistory"
   | "tryAgain"
   | "loading"
-  | "exportPdf";
+  | "exportPdf"
+  | "driveStorage"
+  | "connectDrive"
+  | "reconnectDrive"
+  | "driveConnected"
+  | "driveNotConnected"
+  | "drivePrivateNotice"
+  | "mapFolders"
+  | "folderMapped"
+  | "folderNotMapped"
+  | "selectPrivateFolder"
+  | "changePrivateFolder"
+  | "existingFilesNotice"
+  | "driveSetupHelp"
+  | "folder"
+  | "driveSubtitle";
 
 const messages: Record<Locale, Record<MessageKey, string>> = {
   en: {
@@ -161,6 +176,24 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
     tryAgain: "Try again",
     loading: "Loading…",
     exportPdf: "Print / Save as PDF",
+    driveStorage: "Google Drive storage",
+    connectDrive: "Connect Google Drive",
+    reconnectDrive: "Reconnect Google Drive",
+    driveConnected: "Connected",
+    driveNotConnected: "Not connected",
+    drivePrivateNotice:
+      "Submission files stay in restricted Drive folders. The portal never creates public links; portal permissions still control access.",
+    mapFolders: "Map private folders to classes",
+    folderMapped: "Folder mapped",
+    folderNotMapped: "No folder mapped",
+    selectPrivateFolder: "Select private folder",
+    changePrivateFolder: "Change folder",
+    existingFilesNotice:
+      "Existing submissions in private Supabase Storage remain available. New submissions use Drive after folders are mapped.",
+    driveSetupHelp:
+      "Choose a restricted folder for each class using the connected Unit Leader account. The Picker does not change sharing permissions.",
+    folder: "Drive folder",
+    driveSubtitle: "Private submission storage for Unit 1 IT Systems.",
   },
   ar: {
     dashboard: "لوحة التحكم",
@@ -240,6 +273,24 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
     tryAgain: "حاول مرة أخرى",
     loading: "جارٍ التحميل…",
     exportPdf: "طباعة / حفظ كملف PDF",
+    driveStorage: "تخزين Google Drive",
+    connectDrive: "ربط Google Drive",
+    reconnectDrive: "إعادة ربط Google Drive",
+    driveConnected: "متصل",
+    driveNotConnected: "غير متصل",
+    drivePrivateNotice:
+      "تظل ملفات التسليم داخل مجلدات Drive المقيّدة. لا ينشئ النظام روابط عامة، وتظل صلاحيات البوابة هي المتحكمة في الوصول.",
+    mapFolders: "ربط المجلدات الخاصة بالفصول",
+    folderMapped: "تم ربط المجلد",
+    folderNotMapped: "لم يتم ربط مجلد",
+    selectPrivateFolder: "اختر مجلداً خاصاً",
+    changePrivateFolder: "تغيير المجلد",
+    existingFilesNotice:
+      "تظل التسليمات الحالية في تخزين Supabase الخاص متاحة. تُحفظ التسليمات الجديدة في Drive بعد ربط المجلدات.",
+    driveSetupHelp:
+      "اختر مجلداً مقيّداً لكل فصل باستخدام حساب قائد الوحدة المتصل. لا يغيّر محدد المجلدات إعدادات المشاركة.",
+    folder: "مجلد Drive",
+    driveSubtitle: "تخزين خاص لتسليمات الوحدة الأولى في نظم تكنولوجيا المعلومات.",
   },
 };
 

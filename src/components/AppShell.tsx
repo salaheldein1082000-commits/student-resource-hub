@@ -13,6 +13,7 @@ import {
   Upload,
   ClipboardCheck,
   UserCog,
+  HardDrive,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/auth";
@@ -86,6 +87,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               </p>
               <Link to="/manage/classes" className={linkCls} activeProps={{ className: activeCls }}>
                 <Users className="h-4 w-4" /> {t("classes")}
+              </Link>
+              <Link to="/manage/drive" className={linkCls} activeProps={{ className: activeCls }}>
+                <HardDrive className="h-4 w-4" /> {t("driveStorage")}
               </Link>
               <Link
                 to="/manage/assessors"
