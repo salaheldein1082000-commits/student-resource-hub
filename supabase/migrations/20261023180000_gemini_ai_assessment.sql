@@ -46,14 +46,14 @@ GRANT UPDATE ON public.ai_assessment_runs TO authenticated;
 CREATE POLICY "staff can read AI assignment configs" ON public.ai_assignment_configs
   FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'assessor'));
 CREATE POLICY "unit leaders manage AI assignment configs" ON public.ai_assignment_configs
-  FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'unit_leader'))
-  WITH CHECK (public.has_role(auth.uid(), 'unit_leader'));
+  FOR ALL TO authenticated USING (public.is_unit_leader(auth.uid()))
+  WITH CHECK (public.is_unit_leader(auth.uid()));
 
 CREATE POLICY "staff can read AI rubric items" ON public.ai_rubric_items
   FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'assessor'));
 CREATE POLICY "unit leaders manage AI rubric items" ON public.ai_rubric_items
-  FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'unit_leader'))
-  WITH CHECK (public.has_role(auth.uid(), 'unit_leader'));
+  FOR ALL TO authenticated USING (public.is_unit_leader(auth.uid()))
+  WITH CHECK (public.is_unit_leader(auth.uid()));
 
 CREATE POLICY "staff can read AI assessment runs" ON public.ai_assessment_runs
   FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'assessor'));
