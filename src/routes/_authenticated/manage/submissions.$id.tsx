@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Download, FileText, Printer, Save, Send, ShieldCheck, Trash2 } from "lucide-react";
+import { Bot, Download, FileText, Printer, Save, Send, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,8 @@ export const Route = createFileRoute("/_authenticated/manage/submissions/$id")({
 type GradeRow = { achieved: boolean | null; comment: string };
 
 type Preview = { kind: "pdf"; url: string } | { kind: "docx"; text: string };
+type AiCriterionResult = { criterion_code: string; suggested_points: number; evidence: string; reasoning: string; feedback: string; confidence: "low" | "medium" | "high" };
+type AiResult = { total_points: number; overall_summary: string; criteria: AiCriterionResult[] };
 
 function GradeSubmission() {
   const { id } = Route.useParams();
@@ -60,6 +62,15 @@ function GradeSubmission() {
       if (grades.error) throw grades.error;
       if (summary.error) throw summary.error;
       return { grades: grades.data ?? [], summary: summary.data };
+    },
+  });
+  const aiRunQuery = useQuery({
+    queryKey: ["portal", "ai-assessment", id],
+    enabled: !!submission,
+    queryFn: async () => {
+      const { data, error } = await portalDb.from("ai_assessment_runs").select("id, status, result, error_message, model, created_at, completed_at").eq("submission_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (error) throw error;
+      return data as { id: string; status: string; result: AiResult | null; error_message: string | null; model: string; created_at: string; completed_at: string | null } | null;
     },
   });
 
@@ -389,6 +400,23 @@ function GradeSubmission() {
     }
   }
 
+  async function runAiReview() {
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("drive-storage", {
+        body: { action: "ai_assess_submission", submissionId: currentSubmission.id },
+      });
+      if (error) throw error;
+      if (!data?.result) throw new Error("Gemini did not return an assessment draft.");
+      toast.success("Gemini draft assessment is ready for review.");
+      await queryClient.invalidateQueries({ queryKey: ["portal", "ai-assessment", id] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not run Gemini assessment.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function exportPublishedFeedback() {
     const summary = assessmentQuery.data?.summary;
     if (!summary?.published) return;
@@ -461,6 +489,18 @@ function GradeSubmission() {
         ) : (
           <p className="text-sm text-muted-foreground">Private preview unavailable.</p>
         )}
+      </section>
+
+      <section className="mb-8 rounded-xl border bg-card p-5 shadow-card">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2"><Bot className="h-5 w-5 text-primary" /><h2 className="text-lg font-bold">Gemini draft assessment</h2></div>
+            <p className="mt-1 text-sm text-muted-foreground">Gemini compares this private file with the Unit Leader rubric and returns suggested points and evidence. It will not publish a grade.</p>
+          </div>
+          <Button variant="outline" onClick={() => void runAiReview()} disabled={busy}><Bot className="h-4 w-4" /> {busy ? "Reviewing…" : "Run Gemini review"}</Button>
+        </div>
+        {aiRunQuery.data?.status === "failed" && <p className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{aiRunQuery.data.error_message ?? "The Gemini review failed."}</p>}
+        {aiRunQuery.data?.result && <div className="mt-5 space-y-3"><div className="rounded-lg bg-muted p-4"><p className="font-semibold">Suggested total: {aiRunQuery.data.result.total_points}</p><p className="mt-1 text-sm text-muted-foreground">{aiRunQuery.data.result.overall_summary}</p></div>{aiRunQuery.data.result.criteria.map((item) => <article key={item.criterion_code} className="rounded-lg border p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-mono font-bold">{item.criterion_code}: {item.suggested_points} points</p><span className="text-xs uppercase text-muted-foreground">Confidence: {item.confidence}</span></div><p className="mt-2 text-sm"><strong>Evidence:</strong> {item.evidence}</p><p className="mt-2 text-sm text-muted-foreground"><strong>Reasoning:</strong> {item.reasoning}</p><p className="mt-2 text-sm"><strong>Suggested feedback:</strong> {item.feedback}</p></article>)}</div>}
       </section>
 
       <section>
