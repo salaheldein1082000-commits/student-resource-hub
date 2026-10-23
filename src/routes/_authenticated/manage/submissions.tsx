@@ -1,8 +1,11 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { format } from "date-fns";
-import { Filter } from "lucide-react";
+import { Filter, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/AppShell";
 import { useLocale } from "@/lib/locale";
@@ -122,6 +125,8 @@ function SubmissionLine({
   className?: string | undefined;
 }) {
   const { t } = useLocale();
+  const queryClient = useQueryClient();
+  const [deleting, setDeleting] = useState(false);
   const color =
     item.status === "graded"
       ? "bg-success text-success-foreground"
@@ -146,13 +151,50 @@ function SubmissionLine({
       <span className="text-sm text-muted-foreground">
         {item.submitted_at ? format(new Date(item.submitted_at), "d MMM yyyy, HH:mm") : ""}
       </span>
-      <Badge variant="outline" className={color}>
-        {item.status === "graded"
+        <Badge variant="outline" className={color}>
+          {item.status === "graded"
           ? t("graded")
           : item.status === "resubmission_allowed"
             ? t("resubmissionAllowed")
             : t("submitted")}
-      </Badge>
-    </Link>
+        </Badge>
+        <Button
+          type="button"
+          size="sm"
+          variant="destructive"
+          className="shrink-0"
+          disabled={deleting}
+          title="Delete submission"
+          aria-label={`Delete submission from ${item.profiles?.full_name ?? "student"}`}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            void (async () => {
+              if (
+                !window.confirm(
+                  "Delete this submission permanently? Its stored file, feedback, and submission record will be removed.",
+                )
+              )
+                return;
+              setDeleting(true);
+              try {
+                const { data, error } = await supabase.functions.invoke("drive-storage", {
+                  body: { action: "delete_submission", submissionId: item.id },
+                });
+                if (error) throw error;
+                if (!data?.deleted) throw new Error("The submission was not deleted.");
+                toast.success("Submission deleted.");
+                await queryClient.invalidateQueries({ queryKey: ["portal", "submissions"] });
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Could not delete the submission.");
+              } finally {
+                setDeleting(false);
+              }
+            })();
+          }}
+        >
+          <Trash2 className="mr-1 h-4 w-4" /> Delete
+        </Button>
+      </Link>
   );
 }
