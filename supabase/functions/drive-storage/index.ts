@@ -390,6 +390,7 @@ async function initiateUpload(req: Request, payload: Record<string, unknown>): P
 
   try {
     const token = await driveAccessToken(admin);
+    const origin = req.headers.get("origin");
     const uploadResponse = await fetch(
       "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true&fields=id,name,mimeType,size,parents,appProperties",
       {
@@ -399,6 +400,7 @@ async function initiateUpload(req: Request, payload: Record<string, unknown>): P
           "Content-Type": "application/json; charset=UTF-8",
           "X-Upload-Content-Type": mimeType,
           "X-Upload-Content-Length": String(size),
+          ...(origin ? { Origin: origin } : {}),
         },
         body: JSON.stringify({
           name: driveFileName,
