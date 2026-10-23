@@ -620,6 +620,55 @@ async function downloadSubmission(
   return new Response(upstream.body, { status: upstream.status, headers });
 }
 
+async function deleteSubmission(req: Request, payload: Record<string, unknown>): Promise<Response> {
+  const { admin, user, profile } = await authenticate(req);
+  if (profile.role !== "unit_leader" && profile.role !== "engineer")
+    throw new HttpError("Only assessors and Unit Leaders can delete submissions.", 403);
+  const submissionId = typeof payload.submissionId === "string" ? payload.submissionId : "";
+  if (!/^[0-9a-f-]{36}$/i.test(submissionId))
+    throw new HttpError("The submission identifier is not valid.");
+
+  const { data: submission, error: submissionError } = await admin
+    .from("submissions")
+    .select("id, student_id, assignment_id, attempt_no, file_url, original_file_name, storage_provider, drive_file_id, drive_upload_session_id")
+    .eq("id", submissionId)
+    .maybeSingle();
+  if (submissionError || !submission)
+    throw new HttpError("The submission was not found or has already been deleted.", 404);
+
+  const token = submission.storage_provider === "google_drive" ? await driveAccessToken(admin) : null;
+  if (token && submission.drive_file_id) {
+    const response = await fetch(
+      driveApiUrl(submission.drive_file_id, { supportsAllDrives: "true" }),
+      { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (!response.ok && response.status !== 404)
+      throw new HttpError("Google Drive could not remove the submission file. The record was not deleted.", 502);
+  } else if (submission.storage_provider === "supabase" && submission.file_url) {
+    const { error: storageError } = await admin.storage.from("submissions").remove([submission.file_url]);
+    if (storageError)
+      throw new HttpError("The stored submission file could not be removed. The record was not deleted.", 502);
+  }
+
+  const { error: logError } = await admin.from("submission_deletion_log").insert({
+    submission_id: submission.id,
+    deleted_by: user.id,
+    student_id: submission.student_id,
+    assignment_id: submission.assignment_id,
+    attempt_no: submission.attempt_no,
+    original_file_name: submission.original_file_name,
+    storage_provider: submission.storage_provider,
+  });
+  if (logError) throw new HttpError("The deletion could not be audited, so the submission was not deleted.", 500);
+
+  const { error: deleteError } = await admin.from("submissions").delete().eq("id", submission.id);
+  if (deleteError) throw new HttpError("The submission record could not be deleted.", 500);
+  if (submission.drive_upload_session_id) {
+    await admin.from("drive_upload_sessions").delete().eq("id", submission.drive_upload_session_id);
+  }
+  return json(req, 200, { deleted: true });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     const origin = req.headers.get("origin");
@@ -648,6 +697,8 @@ Deno.serve(async (req: Request) => {
         return await finalizeUpload(req, payload);
       case "download":
         return await downloadSubmission(req, payload);
+      case "delete_submission":
+        return await deleteSubmission(req, payload);
       default:
         throw new HttpError("Unknown Drive storage action.");
     }
