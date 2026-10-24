@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Pencil, Save, Search, UserRoundX, X } from "lucide-react";
+import { Pencil, Plus, Save, Search, UserRoundX, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,15 @@ function StudentRosterPage() {
   const [editName, setEditName] = useState("");
   const [editClassId, setEditClassId] = useState("");
   const [editStudentCode, setEditStudentCode] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newStudentName, setNewStudentName] = useState("");
+  const [newStudentCode, setNewStudentCode] = useState("");
+  const [newStudentClassId, setNewStudentClassId] = useState("");
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    name: string;
+    code: string;
+    className: string;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const classes = classesQuery.data;
@@ -135,6 +144,46 @@ function StudentRosterPage() {
     }
   }
 
+  async function createStudent() {
+    if (me?.role !== "unit_leader") return;
+    const name = newStudentName.trim();
+    const code = newStudentCode.trim();
+    const selectedClass = assignedClasses.find((classRow) => classRow.id === newStudentClassId);
+    if (name.length < 2 || name.length > 120) {
+      toast.error(t("studentNameValidation"));
+      return;
+    }
+    if (!/^\d{6}$/.test(code)) {
+      toast.error(t("studentCodeValidation"));
+      return;
+    }
+    if (!selectedClass) {
+      toast.error(t("chooseClass"));
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await portalDb.rpc("create_student", {
+        _class_id: selectedClass.id,
+        _student_code: code,
+        _full_name: name,
+      });
+      if (error) throw error;
+      setCreatedCredentials({ name, code, className: selectedClass.name });
+      setNewStudentName("");
+      setNewStudentCode("");
+      toast.success(t("studentCreated"));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["portal", "students"] }),
+        queryClient.invalidateQueries({ queryKey: ["portal", "classes"] }),
+      ]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("studentCreateError"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function removeFromClass(studentId: string, studentName: string | null) {
     if (me?.role !== "unit_leader") return;
     if (
@@ -170,10 +219,117 @@ function StudentRosterPage() {
       {me?.role === "unit_leader" && (
         <div className="my-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3 text-sm">
           <span>Manage student profiles without deleting accounts or assessment history.</span>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/manage/import">Import students</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                setShowCreateForm((open) => !open);
+                setCreatedCredentials(null);
+              }}
+            >
+              <Plus className="me-2 h-4 w-4" /> {t("addStudent")}
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/manage/import">{t("importStudents")}</Link>
+            </Button>
+          </div>
         </div>
+      )}
+
+      {me?.role === "unit_leader" && showCreateForm && (
+        <section
+          className="my-4 rounded-xl border bg-card p-4 shadow-card"
+          aria-labelledby="add-student-heading"
+        >
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h2 id="add-student-heading" className="text-base font-semibold">
+                {t("addStudent")}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t("studentCredentialsHelp")}</p>
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={t("cancel")}
+              onClick={() => setShowCreateForm(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="space-y-1 text-xs text-muted-foreground">
+              {t("studentName")}
+              <Input
+                value={newStudentName}
+                maxLength={120}
+                onChange={(event) => setNewStudentName(event.target.value)}
+              />
+            </label>
+            <label className="space-y-1 text-xs text-muted-foreground">
+              {t("studentCode")}
+              <Input
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={6}
+                value={newStudentCode}
+                onChange={(event) =>
+                  setNewStudentCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+              />
+            </label>
+            <label className="space-y-1 text-xs text-muted-foreground">
+              {t("class")}
+              <select
+                value={newStudentClassId}
+                onChange={(event) => setNewStudentClassId(event.target.value)}
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">{t("chooseClass")}</option>
+                {assignedClasses.map((classRow) => (
+                  <option key={classRow.id} value={classRow.id}>
+                    {classRow.name} · {t("enrollment")}{" "}
+                    {students?.filter((student) => student.class_id === classRow.id).length ?? 0}/
+                    {classRow.capacity}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1 text-xs text-muted-foreground">
+              {t("initialPassword")}
+              <Input
+                type="password"
+                readOnly
+                value={newStudentCode}
+                placeholder={t("passwordMatchesCode")}
+              />
+            </label>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              {t("studentCapacityAndDuplicateNotice")}
+            </p>
+            <Button disabled={busy || classesQuery.isLoading} onClick={() => void createStudent()}>
+              {busy ? t("savingStudent") : t("createStudent")}
+            </Button>
+          </div>
+          {createdCredentials && (
+            <div
+              className="mt-4 rounded-lg border border-emerald-600/30 bg-emerald-500/5 p-3 text-sm"
+              role="status"
+            >
+              <p className="font-semibold">{t("studentCreatedCredentials")}</p>
+              <p className="mt-1">
+                {createdCredentials.name} · {createdCredentials.className}
+              </p>
+              <p className="mt-1 font-mono">
+                {t("studentCode")}: {createdCredentials.code} · {t("initialPassword")}:{" "}
+                {createdCredentials.code}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("shareCredentialsPrivately")}</p>
+            </div>
+          )}
+        </section>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">

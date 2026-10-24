@@ -95,7 +95,22 @@ type MessageKey =
   | "existingFilesNotice"
   | "driveSetupHelp"
   | "folder"
-  | "driveSubtitle";
+  | "driveSubtitle"
+  | "addStudent"
+  | "studentCredentialsHelp"
+  | "studentCode"
+  | "initialPassword"
+  | "passwordMatchesCode"
+  | "studentCapacityAndDuplicateNotice"
+  | "createStudent"
+  | "savingStudent"
+  | "studentCreated"
+  | "studentCreatedCredentials"
+  | "shareCredentialsPrivately"
+  | "studentNameValidation"
+  | "studentCodeValidation"
+  | "chooseClass"
+  | "studentCreateError";
 
 const messages: Record<Locale, Record<MessageKey, string>> = {
   en: {
@@ -194,6 +209,23 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
       "Choose a restricted folder for each class using the connected Unit Leader account. The Picker does not change sharing permissions.",
     folder: "Drive folder",
     driveSubtitle: "Private submission storage for Unit 1 IT Systems.",
+    addStudent: "Add student",
+    studentCredentialsHelp:
+      "Create one student account. The six-digit student code will also be the initial password.",
+    studentCode: "Six-digit student code",
+    initialPassword: "Initial password",
+    passwordMatchesCode: "Same as student code",
+    studentCapacityAndDuplicateNotice:
+      "Class capacity and duplicate codes are checked securely before the account is created.",
+    createStudent: "Create student",
+    savingStudent: "Creating…",
+    studentCreated: "Student account created.",
+    studentCreatedCredentials: "Share these initial login details with the student:",
+    shareCredentialsPrivately: "Share these credentials privately. Do not post them publicly.",
+    studentNameValidation: "Student name must be between 2 and 120 characters.",
+    studentCodeValidation: "Student code must contain exactly 6 digits.",
+    chooseClass: "Choose a class.",
+    studentCreateError: "Could not create the student account.",
   },
   ar: {
     dashboard: "لوحة التحكم",
@@ -291,6 +323,23 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
       "اختر مجلداً مقيّداً لكل فصل باستخدام حساب قائد الوحدة المتصل. لا يغيّر محدد المجلدات إعدادات المشاركة.",
     folder: "مجلد Drive",
     driveSubtitle: "تخزين خاص لتسليمات الوحدة الأولى في نظم تكنولوجيا المعلومات.",
+    addStudent: "إضافة طالب",
+    studentCredentialsHelp:
+      "إنشاء حساب طالب واحد. سيكون رمز الطالب المكوّن من ستة أرقام هو كلمة المرور الأولية أيضاً.",
+    studentCode: "رمز الطالب المكوّن من ستة أرقام",
+    initialPassword: "كلمة المرور الأولية",
+    passwordMatchesCode: "مطابقة لرمز الطالب",
+    studentCapacityAndDuplicateNotice:
+      "يتم التحقق من سعة الفصل وعدم تكرار الرمز قبل إنشاء الحساب بشكل آمن.",
+    createStudent: "إنشاء حساب الطالب",
+    savingStudent: "جارٍ الإنشاء…",
+    studentCreated: "تم إنشاء حساب الطالب.",
+    studentCreatedCredentials: "شارك بيانات تسجيل الدخول الأولية هذه مع الطالب:",
+    shareCredentialsPrivately: "شارك بيانات الدخول بشكل خاص ولا تنشرها للعامة.",
+    studentNameValidation: "يجب أن يتراوح اسم الطالب بين حرفين و120 حرفاً.",
+    studentCodeValidation: "يجب أن يتكون رمز الطالب من ستة أرقام بالضبط.",
+    chooseClass: "اختر فصلاً.",
+    studentCreateError: "تعذر إنشاء حساب الطالب.",
   },
 };
 
