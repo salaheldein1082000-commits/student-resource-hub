@@ -20,6 +20,27 @@ import { portalClassesQuery, portalDb, portalProfilesQuery } from "@/lib/portal"
 
 const NO_CLASS = "__none__";
 
+function createAssessorErrorMessage(error: unknown): string {
+  const value =
+    error && typeof error === "object" ? (error as { code?: unknown; message?: unknown }) : null;
+  const code = typeof value?.code === "string" ? value.code : "";
+  const message =
+    typeof value?.message === "string"
+      ? value.message
+      : error instanceof Error
+        ? error.message
+        : "";
+  if (
+    code === "refresh_token_not_found" ||
+    /refresh.?token.*(?:not found|invalid|expired)|invalid refresh token/i.test(
+      `${code} ${message}`,
+    )
+  ) {
+    return "Your sign-in session expired. Sign out and sign back in, then try creating the Assessor again.";
+  }
+  return message || "Could not create Assessor account.";
+}
+
 export const Route = createFileRoute("/_authenticated/manage/assessors")({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQuery);
@@ -91,7 +112,7 @@ function AssessorsPage() {
         queryClient.invalidateQueries({ queryKey: portalClassesQuery.queryKey }),
       ]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not create Assessor account.");
+      toast.error(createAssessorErrorMessage(error));
     } finally {
       setBusy(false);
     }
@@ -261,7 +282,7 @@ function AssessorsPage() {
                 Choose a password at least 8 characters long. Only share it with the new Assessor
                 through an appropriate channel.
               </p>
-              <Button type="submit" disabled={busy || classesLoading} className="w-full">
+              <Button type="submit" disabled={busy} className="w-full">
                 {busy ? "Creating account…" : "Create Assessor account"}
               </Button>
             </form>

@@ -644,6 +644,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      create_assessor: {
+        Args: { _class_id?: string | null; _email: string; _full_name: string; _password: string }
+        Returns: { email: string; user_id: string }[]
+      }
       delete_class_with_transfer: {
         Args: { _class_id: string; _target_class_id?: string | null }
         Returns: undefined

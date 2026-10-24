@@ -101,7 +101,10 @@ function AiAssessmentSettings() {
       const { error: rubricError } = await portalDb.from("ai_rubric_items").insert(rubric.map((item, index) => ({ assignment_id: selected.id, criterion_id: item.criterion_id, max_points: Number(item.max_points), guidance: item.guidance.trim(), model_answer: item.model_answer.trim(), sort_order: index })));
       if (rubricError) throw rubricError;
       toast.success("Gemini rubric saved.");
-      await queryClient.invalidateQueries({ queryKey: ["portal", "ai-config", selected.id] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["portal", "ai-config", selected.id] }),
+        queryClient.invalidateQueries({ queryKey: ["portal", "ai-assessment-enabled", selected.id] }),
+      ]);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Could not save the AI rubric."); }
     finally { setSaving(false); }
   }

@@ -64,9 +64,41 @@ function GradeSubmission() {
       return { grades: grades.data ?? [], summary: summary.data };
     },
   });
+  const aiSettingsQuery = useQuery({
+    queryKey: ["portal", "settings"],
+    queryFn: async () => {
+      const { data, error } = await portalDb
+        .from("portal_settings")
+        .select("ai_assessment_enabled, updated_at")
+        .eq("id", true)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { ai_assessment_enabled: boolean; updated_at: string } | null;
+    },
+  });
+  const aiAssignmentEnabledQuery = useQuery({
+    queryKey: ["portal", "ai-assessment-enabled", submission?.assignment_id],
+    enabled: !!submission?.assignment_id,
+    queryFn: async () => {
+      const { data, error } = await portalDb
+        .from("ai_assignment_configs")
+        .select("enabled")
+        .eq("assignment_id", submission!.assignment_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.enabled === true;
+    },
+  });
+  const canUseAiReview =
+    !aiSettingsQuery.isFetching &&
+    !aiAssignmentEnabledQuery.isFetching &&
+    !aiSettingsQuery.error &&
+    !aiAssignmentEnabledQuery.error &&
+    aiSettingsQuery.data?.ai_assessment_enabled === true &&
+    aiAssignmentEnabledQuery.data === true;
   const aiRunQuery = useQuery({
     queryKey: ["portal", "ai-assessment", id],
-    enabled: !!submission,
+    enabled: !!submission && canUseAiReview,
     queryFn: async () => {
       const { data, error } = await portalDb.from("ai_assessment_runs").select("id, status, result, error_message, model, created_at, completed_at").eq("submission_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (error) throw error;
@@ -401,6 +433,10 @@ function GradeSubmission() {
   }
 
   async function runAiReview() {
+    if (!canUseAiReview) {
+      toast.error("Enable AI assessment globally and for this assignment before running a review.");
+      return;
+    }
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("drive-storage", {
@@ -491,6 +527,7 @@ function GradeSubmission() {
         )}
       </section>
 
+      {canUseAiReview && (
       <section className="mb-8 rounded-xl border bg-card p-5 shadow-card">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -502,6 +539,7 @@ function GradeSubmission() {
         {aiRunQuery.data?.status === "failed" && <p className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{aiRunQuery.data.error_message ?? "The Gemini review failed."}</p>}
         {aiRunQuery.data?.result && <div className="mt-5 space-y-3"><div className="rounded-lg bg-muted p-4"><p className="font-semibold">Suggested total: {aiRunQuery.data.result.total_points}</p><p className="mt-1 text-sm text-muted-foreground">{aiRunQuery.data.result.overall_summary}</p></div>{aiRunQuery.data.result.criteria.map((item) => <article key={item.criterion_code} className="rounded-lg border p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-mono font-bold">{item.criterion_code}: {item.suggested_points} points</p><span className="text-xs uppercase text-muted-foreground">Confidence: {item.confidence}</span></div><p className="mt-2 text-sm"><strong>Evidence:</strong> {item.evidence}</p><p className="mt-2 text-sm text-muted-foreground"><strong>Reasoning:</strong> {item.reasoning}</p><p className="mt-2 text-sm"><strong>Suggested feedback:</strong> {item.feedback}</p></article>)}</div>}
       </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-xl font-bold">{t("criteria")}</h2>
