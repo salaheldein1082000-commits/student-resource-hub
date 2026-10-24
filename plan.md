@@ -49,3 +49,10 @@ Vercel status (2026-10-23): the linked project reported a production deployment 
 
 
 Security/performance follow-up (2026-10-23): applied `20261023120000_drive_indexes_and_student_reimport_safety.sql`. Verified existing CSV imports no longer update `auth.users` or return an existing student's password, new student accounts receive `must_change_password=true`, intended grants remain (`anon=false`, `authenticated=true`, `service_role=true`), and all three Drive foreign-key indexes exist. The Supabase security advisor still reports leaked-password protection disabled; enable it manually in Auth password-security settings. Its 20 authenticated `SECURITY DEFINER` warnings are understood: RLS helpers bind the supplied user ID to `auth.uid()`, management RPCs check Unit Leader authorization, and the Drive Vault/session RPCs are service-role-only. The three private Drive tables intentionally have RLS enabled with no user policies and no direct grants; only the service role accesses them. Performance advisor no longer reports unindexed foreign keys; it still notes unused Drive indexes before traffic and existing multiple-permissive-policy patterns.
+
+
+## Unit Leader class lifecycle extension (2026-10-24)
+
+The existing **Manage → Classes** screen now supports creating uniquely named classes, renaming them, and setting capacity from 1 to 500 while preventing a limit below current enrollment. The database replaces the prior fixed 20/21 capacity rule and enforces the same bounds independently of the UI.
+
+Deletion is routed through a Unit Leader-only RPC; authenticated clients cannot delete class rows directly. If students or Drive upload-session history exist, the Unit Leader must choose a destination with enough capacity. Student membership, assignment visibility, and completed/expired upload-session metadata are transferred before the source class is removed. Active uploads block deletion. Student accounts, submissions, Drive objects, and the physical Drive folder are preserved. The migration was applied to the Unit1 Supabase project without changing the existing 12 class records or enrollments.

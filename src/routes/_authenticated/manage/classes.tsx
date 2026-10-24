@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Save,
   ShieldCheck,
+  Trash2,
   UserCheck,
   UserPlus,
   Users,
@@ -43,7 +44,6 @@ const SEEDED_CLASS_NAMES = Array.from(
   (_, index) => `Class ${String(index + 1).padStart(2, "0")}`,
 );
 
-type DisplayClass = PortalClass & { placeholder?: boolean };
 type Credentials = { email: string; fullName: string; temporaryPassword: string };
 
 export const Route = createFileRoute("/_authenticated/manage/classes")({
@@ -74,7 +74,11 @@ function ClassesPage() {
   const profilesQuery = useQuery(portalProfilesQuery);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [editingCapacityClassId, setEditingCapacityClassId] = useState<string | null>(null);
+  const [editingCapacity, setEditingCapacity] = useState("");
   const [mutatingKey, setMutatingKey] = useState<string | null>(null);
+  const [createClassName, setCreateClassName] = useState("");
+  const [createClassCapacity, setCreateClassCapacity] = useState("20");
   const [createEmail, setCreateEmail] = useState("");
   const [createFullName, setCreateFullName] = useState("");
   const [createClassId, setCreateClassId] = useState(NO_CLASS_VALUE);
@@ -84,7 +88,7 @@ function ClassesPage() {
 
   const classes = classesQuery.data ?? [];
   const profiles = profilesQuery.data ?? [];
-  const displayClasses = seededClasses(classes);
+  const displayClasses = [...classes].sort((left, right) => left.name.localeCompare(right.name));
   const engineers = profiles.filter((profile) => profile.role === "engineer");
   const eligibleProfiles = profiles.filter((profile) => profile.role === "student");
   const engineerAssignments = new Map<string, number>();
@@ -116,7 +120,76 @@ function ClassesPage() {
     }
   };
 
-  const renameClass = async (classRow: DisplayClass) => {
+  const createClass = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const name = createClassName.trim();
+    const capacity = Number(createClassCapacity);
+    if (name.length < 2 || name.length > 80) {
+      toast.error("Class name must be between 2 and 80 characters.");
+      return;
+    }
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 500) {
+      toast.error("Capacity must be a whole number from 1 to 500.");
+      return;
+    }
+    await withMutation("create-class", async () => {
+      const { error } = await portalDb.rpc("create_class", {
+        _name: name,
+        _capacity: capacity,
+      });
+      if (error) throw error;
+      setCreateClassName("");
+      setCreateClassCapacity("20");
+      await queryClient.invalidateQueries({ queryKey: portalClassesQuery.queryKey });
+      toast.success("Class created.");
+    });
+  };
+
+  const saveCapacity = async (classRow: PortalClass) => {
+    const capacity = Number(editingCapacity);
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 500) {
+      toast.error("Capacity must be a whole number from 1 to 500.");
+      return;
+    }
+    await withMutation(`capacity-${classRow.id}`, async () => {
+      const { error } = await portalDb.rpc("update_class_capacity", {
+        _class_id: classRow.id,
+        _capacity: capacity,
+      });
+      if (error) throw error;
+      setEditingCapacityClassId(null);
+      setEditingCapacity("");
+      await queryClient.invalidateQueries({ queryKey: portalClassesQuery.queryKey });
+      toast.success("Class capacity updated.");
+    });
+  };
+
+  const deleteClass = async (classRow: PortalClass, targetClassId: string | null) => {
+    const target = classes.find((candidate) => candidate.id === targetClassId);
+    const detail = target
+      ? ` Students and their assignment access will move to ${target.name}; submission history is preserved.`
+      : " This only works when the class has no students or Drive upload history.";
+    if (
+      !window.confirm(
+        `Delete ${classRow.name}?${detail} The class's Assessor and folder mapping will be removed; the Drive folder and student accounts will not be deleted.`,
+      )
+    )
+      return;
+
+    await withMutation(`delete-${classRow.id}`, async () => {
+      const { error } = await portalDb.rpc("delete_class_with_transfer", {
+        _class_id: classRow.id,
+        _target_class_id: targetClassId,
+      });
+      if (error) throw error;
+      setEditingClassId(null);
+      setEditingCapacityClassId(null);
+      await invalidatePortal();
+      toast.success(`${classRow.name} deleted.`);
+    });
+  };
+
+  const renameClass = async (classRow: PortalClass) => {
     const name = editingName.trim();
     if (!name) {
       toast.error("Enter a class name.");
@@ -132,8 +205,7 @@ function ClassesPage() {
     });
   };
 
-  const assignAssessor = async (classRow: DisplayClass, engineerId: string) => {
-    if (classRow.placeholder) return;
+  const assignAssessor = async (classRow: PortalClass, engineerId: string) => {
     await withMutation(`assign-${classRow.id}`, async () => {
       if (engineerId === UNASSIGNED_VALUE) {
         const { error } = await portalDb
@@ -241,7 +313,7 @@ function ClassesPage() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Classes"
-        sub="Set up the 20-seat teaching groups and keep Assessor access class-scoped."
+        sub="Create and manage classes, set student capacity, and keep Assessor access class-scoped."
       >
         <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs text-muted-foreground">
           <ShieldCheck className="h-4 w-4 text-primary" /> Unit Leader admin
@@ -270,41 +342,115 @@ function ClassesPage() {
         <LoadingState />
       ) : (
         <>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5 text-primary" /> Add a class
+              </CardTitle>
+              <CardDescription>
+                Choose a unique name and set the maximum number of enrolled students (1–500).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem_auto]"
+                onSubmit={createClass}
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="new-class-name">Class name</Label>
+                  <Input
+                    id="new-class-name"
+                    value={createClassName}
+                    onChange={(event) => setCreateClassName(event.target.value)}
+                    maxLength={80}
+                    placeholder="Class 42"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-class-capacity">Student capacity</Label>
+                  <Input
+                    id="new-class-capacity"
+                    type="number"
+                    min={1}
+                    max={500}
+                    step={1}
+                    value={createClassCapacity}
+                    onChange={(event) => setCreateClassCapacity(event.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" disabled={mutatingKey === "create-class"}>
+                    <Plus className="h-4 w-4" />
+                    {mutatingKey === "create-class" ? "Creating…" : "Create class"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
           <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {displayClasses.map((classRow) => (
-              <ClassCard
-                key={classRow.id}
-                classRow={classRow}
-                enrolled={
-                  profiles.filter(
-                    (profile) => profile.role === "student" && profile.class_id === classRow.id,
-                  ).length
-                }
-                engineer={
-                  classRow.engineer_id
-                    ? profiles.find((profile) => profile.id === classRow.engineer_id)
-                    : undefined
-                }
-                engineers={engineers}
-                engineerAssignments={engineerAssignments}
-                editing={editingClassId === classRow.id}
-                editingName={editingClassId === classRow.id ? editingName : classRow.name}
-                busy={
-                  mutatingKey === `rename-${classRow.id}` || mutatingKey === `assign-${classRow.id}`
-                }
-                onStartRename={() => {
-                  setEditingClassId(classRow.id);
-                  setEditingName(classRow.name);
-                }}
-                onEditingNameChange={setEditingName}
-                onCancelRename={() => {
-                  setEditingClassId(null);
-                  setEditingName("");
-                }}
-                onSaveRename={() => void renameClass(classRow)}
-                onAssign={(engineerId) => void assignAssessor(classRow, engineerId)}
-              />
-            ))}
+            {displayClasses.map((classRow) => {
+              const enrolled = profiles.filter(
+                (profile) => profile.role === "student" && profile.class_id === classRow.id,
+              ).length;
+              return (
+                <ClassCard
+                  key={classRow.id}
+                  classRow={classRow}
+                  enrolled={enrolled}
+                  otherClasses={classes.filter((candidate) => candidate.id !== classRow.id)}
+                  engineer={
+                    classRow.engineer_id
+                      ? profiles.find((profile) => profile.id === classRow.engineer_id)
+                      : undefined
+                  }
+                  engineers={engineers}
+                  engineerAssignments={engineerAssignments}
+                  editing={editingClassId === classRow.id}
+                  editingName={editingClassId === classRow.id ? editingName : classRow.name}
+                  capacityEditing={editingCapacityClassId === classRow.id}
+                  editingCapacity={
+                    editingCapacityClassId === classRow.id
+                      ? editingCapacity
+                      : String(classRow.capacity)
+                  }
+                  busy={
+                    mutatingKey === `rename-${classRow.id}` ||
+                    mutatingKey === `assign-${classRow.id}` ||
+                    mutatingKey === `capacity-${classRow.id}` ||
+                    mutatingKey === `delete-${classRow.id}`
+                  }
+                  onStartRename={() => {
+                    setEditingCapacityClassId(null);
+                    setEditingCapacity("");
+                    setEditingClassId(classRow.id);
+                    setEditingName(classRow.name);
+                  }}
+                  onEditingNameChange={setEditingName}
+                  onCancelRename={() => {
+                    setEditingClassId(null);
+                    setEditingName("");
+                  }}
+                  onSaveRename={() => void renameClass(classRow)}
+                  onStartCapacityEdit={() => {
+                    setEditingClassId(null);
+                    setEditingName("");
+                    setEditingCapacityClassId(classRow.id);
+                    setEditingCapacity(String(classRow.capacity));
+                  }}
+                  onEditingCapacityChange={setEditingCapacity}
+                  onCancelCapacityEdit={() => {
+                    setEditingCapacityClassId(null);
+                    setEditingCapacity("");
+                  }}
+                  onSaveCapacity={() => void saveCapacity(classRow)}
+                  onAssign={(engineerId) => void assignAssessor(classRow, engineerId)}
+                  onDelete={(targetClassId) => void deleteClass(classRow, targetClassId)}
+                />
+              );
+            })}
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
@@ -463,35 +609,53 @@ function ClassesPage() {
 function ClassCard({
   classRow,
   enrolled,
+  otherClasses,
   engineer,
   engineers,
   engineerAssignments,
   editing,
   editingName,
+  capacityEditing,
+  editingCapacity,
   busy,
   onStartRename,
   onEditingNameChange,
   onCancelRename,
   onSaveRename,
+  onStartCapacityEdit,
+  onEditingCapacityChange,
+  onCancelCapacityEdit,
+  onSaveCapacity,
   onAssign,
+  onDelete,
 }: {
-  classRow: DisplayClass;
+  classRow: PortalClass;
   enrolled: number;
+  otherClasses: PortalClass[];
   engineer: PortalProfile | undefined;
   engineers: PortalProfile[];
   engineerAssignments: Map<string, number>;
   editing: boolean;
   editingName: string;
+  capacityEditing: boolean;
+  editingCapacity: string;
   busy: boolean;
   onStartRename: () => void;
   onEditingNameChange: (value: string) => void;
   onCancelRename: () => void;
   onSaveRename: () => void;
+  onStartCapacityEdit: () => void;
+  onEditingCapacityChange: (value: string) => void;
+  onCancelCapacityEdit: () => void;
+  onSaveCapacity: () => void;
   onAssign: (engineerId: string) => void;
+  onDelete: (targetClassId: string | null) => void;
 }) {
   const assignedId = classRow.engineer_id ?? UNASSIGNED_VALUE;
+  const [deletePanelOpen, setDeletePanelOpen] = useState(false);
+  const [targetClassId, setTargetClassId] = useState("");
   return (
-    <Card className={classRow.placeholder ? "border-dashed bg-muted/20" : ""}>
+    <Card>
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -524,26 +688,65 @@ function ClassCard({
             ) : (
               <CardTitle className="flex items-center gap-2 text-lg">
                 {classRow.name}
-                {!classRow.placeholder && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7"
-                    aria-label={`Rename ${classRow.name}`}
-                    onClick={onStartRename}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  aria-label={`Rename ${classRow.name}`}
+                  onClick={onStartRename}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
               </CardTitle>
             )}
             <CardDescription className="mt-2 flex items-center gap-2">
               <Users className="h-4 w-4" /> {enrolled} / {classRow.capacity} enrolled
             </CardDescription>
           </div>
-          <span className="rounded-full border px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            20 seats
-          </span>
+          {capacityEditing ? (
+            <div className="flex items-center gap-1.5">
+              <Input
+                type="number"
+                min={enrolled}
+                max={500}
+                step={1}
+                className="w-24"
+                value={editingCapacity}
+                aria-label={`Student capacity for ${classRow.name}`}
+                onChange={(event) => onEditingCapacityChange(event.target.value)}
+              />
+              <Button
+                size="icon"
+                aria-label="Save capacity"
+                disabled={busy}
+                onClick={onSaveCapacity}
+              >
+                <Save className="h-4 w-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label="Cancel capacity change"
+                disabled={busy}
+                onClick={onCancelCapacityEdit}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 rounded-full border px-2 py-1 text-xs text-muted-foreground">
+              <span>{classRow.capacity} seats</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6"
+                aria-label={`Edit capacity for ${classRow.name}`}
+                onClick={onStartCapacityEdit}
+              >
+                <Pencil className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -555,30 +758,83 @@ function ClassCard({
             {engineer ? profileLabel(engineer) : "Not assigned"}
           </p>
         </div>
-        {classRow.placeholder ? (
-          <p className="text-xs text-muted-foreground">
-            Waiting for the seeded class record to become available.
-          </p>
-        ) : (
-          <Select value={assignedId} onValueChange={onAssign} disabled={busy}>
-            <SelectTrigger aria-label={`Assign Assessor to ${classRow.name}`}>
-              <SelectValue placeholder="Choose an Assessor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={UNASSIGNED_VALUE}>No Assessor assigned</SelectItem>
-              {engineers.map((candidate) => {
-                const atLimit =
-                  (engineerAssignments.get(candidate.id) ?? 0) >= 2 &&
-                  candidate.id !== classRow.engineer_id;
-                return (
-                  <SelectItem key={candidate.id} value={candidate.id} disabled={atLimit}>
-                    {profileLabel(candidate)}
-                    {atLimit ? " (2 classes)" : ""}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+        <Select value={assignedId} onValueChange={onAssign} disabled={busy}>
+          <SelectTrigger aria-label={`Assign Assessor to ${classRow.name}`}>
+            <SelectValue placeholder="Choose an Assessor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={UNASSIGNED_VALUE}>No Assessor assigned</SelectItem>
+            {engineers.map((candidate) => {
+              const atLimit =
+                (engineerAssignments.get(candidate.id) ?? 0) >= 2 &&
+                candidate.id !== classRow.engineer_id;
+              return (
+                <SelectItem key={candidate.id} value={candidate.id} disabled={atLimit}>
+                  {profileLabel(candidate)}
+                  {atLimit ? " (2 classes)" : ""}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+
+        <div className="flex items-center justify-between gap-3 border-t pt-3">
+          <span className="text-xs text-muted-foreground">
+            Student capacity: {enrolled}/{classRow.capacity}
+          </span>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setDeletePanelOpen((open) => !open)}
+            disabled={busy}
+          >
+            <Trash2 className="h-4 w-4" /> Delete
+          </Button>
+        </div>
+
+        {deletePanelOpen && (
+          <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Student accounts and submissions are preserved. If students or Drive upload history
+              exist, choose a destination class; student assignment access will move with them.
+              Active uploads must finish first. Ensure the destination has a private Drive folder
+              mapped for future submissions. The class's Assessor/folder mapping is removed, but the
+              Drive folder itself is not deleted.
+            </p>
+            <label className="block space-y-1 text-xs text-muted-foreground">
+              Destination class (required if student or Drive upload history exists):
+              <select
+                value={targetClassId}
+                onChange={(event) => setTargetClassId(event.target.value)}
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground"
+              >
+                <option value="">No destination class</option>
+                {otherClasses.map((candidate) => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {candidate.name} ({candidate.capacity} seats)
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex justify-end gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setDeletePanelOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={busy}
+                onClick={() => onDelete(targetClassId || null)}
+              >
+                Confirm delete
+              </Button>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -613,24 +869,6 @@ function ClassSelect({
   );
 }
 
-function seededClasses(classes: PortalClass[]): DisplayClass[] {
-  const actual = [...classes].sort((a, b) => a.name.localeCompare(b.name));
-  const actualNames = new Set(actual.map((classRow) => classRow.name));
-  const missingNames = SEEDED_CLASS_NAMES.filter((name) => !actualNames.has(name));
-  const placeholders = missingNames
-    .slice(0, Math.max(0, 12 - actual.length))
-    .map((name, index) => ({
-      id: `placeholder-${index + 1}`,
-      name,
-      unit_no: index + 1,
-      capacity: 20,
-      created_at: "",
-      engineer_id: null,
-      placeholder: true,
-    }));
-  return [...actual, ...placeholders];
-}
-
 function profileLabel(profile: PortalProfile) {
   return profile.full_name?.trim() || profile.email || "Unnamed profile";
 }
@@ -643,7 +881,7 @@ function LoadingState() {
   return (
     <div className="space-y-5" role="status" aria-live="polite">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <RefreshCw className="h-4 w-4 animate-spin" /> Loading seeded classes and profiles…
+        <RefreshCw className="h-4 w-4 animate-spin" /> Loading classes and profiles…
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {SEEDED_CLASS_NAMES.slice(0, 6).map((name) => (

@@ -3,7 +3,7 @@
 ## Completed features
 
 - [x] Unit Leader has global access; Assessors are scoped to their assigned classes; students can see only their own submissions and published feedback.
-- [x] Create and manage 12 class records with a capacity of 20 students each, except the approved Class 10 capacity of 21; assign one Assessor per class and enforce a maximum of two classes per Assessor.
+- [x] Maintain the 12 initial classes (Class 10 currently 21 students; the others 20); allow the Unit Leader to create uniquely named classes, rename them, and set capacity from 1–500 without going below enrollment. Allow deletion with a destination transfer for students, assignment access, and Drive upload-session history; preserve student accounts, submissions, and Drive files; block deletion while Drive uploads are active. Assign one Assessor per class and enforce a maximum of two classes per Assessor.
 - [x] Unit Leader can create Assessor accounts, assign classes, monitor rosters, and import students from CSV with validation and row-level results. Privileged credentials remain server-side.
 - [x] Import the supplied 217-student roster into its 12 mapped classes while preserving existing account and class relationships.
 - [x] Add class membership and assignment-to-class visibility while preserving existing users, assignments, announcements, resources, attempts, and legacy assessment values.

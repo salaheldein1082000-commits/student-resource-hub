@@ -16,7 +16,7 @@ Students sign in with a 6-digit student code and password. The app maps the code
 
 ## First-time Unit Leader setup
 
-The portal contains 12 classes. Class 10 is approved for 21 students; the other classes are capped at 20. Existing records and Assessor links are preserved. Create the real Assessor accounts and import the real class rosters before operational use.
+The portal starts with 12 classes: Class 10 is currently set to 21 students and the others to 20. As Unit Leader, you can add or rename classes and set each capacity from 1 to 500; a capacity cannot be reduced below current enrollment. You can delete a class with no student or Drive-upload history, or choose a destination to transfer students, assignment access, and upload-session history first. Student accounts, submissions, and Drive files are never deleted by this action; active uploads must finish, and the deleted class's Assessor/folder mapping is removed (the Drive folder itself remains in Drive).
 
 1. Sign in using the Unit Leader account and open **Classes**.
 2. Create the six Assessor accounts with their real names and email addresses. Assign two classes to each Assessor. The database prevents an Assessor from being assigned to a third class and prevents two Assessors from owning the same class.

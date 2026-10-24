@@ -631,6 +631,10 @@ export type Database = {
         Args: { _assignment_id: string; _user_id: string }
         Returns: boolean
       }
+      create_class: {
+        Args: { _capacity?: number; _name: string }
+        Returns: string
+      }
       complete_initial_password_change: { Args: never; Returns: boolean }
       create_engineer: {
         Args: { _email: string; _full_name: string }
@@ -639,6 +643,10 @@ export type Database = {
           temporary_password: string
           user_id: string
         }[]
+      }
+      delete_class_with_transfer: {
+        Args: { _class_id: string; _target_class_id?: string | null }
+        Returns: undefined
       }
       engineer_has_class: {
         Args: { _class_id: string; _user_id: string }
@@ -677,6 +685,10 @@ export type Database = {
       storage_can_upload_submission: {
         Args: { _object_name: string; _user_id: string }
         Returns: boolean
+      }
+      update_class_capacity: {
+        Args: { _capacity: number; _class_id: string }
+        Returns: undefined
       }
       submission_feedback_is_published: {
         Args: { _submission_id: string }

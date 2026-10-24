@@ -18,6 +18,7 @@ import { Route as AuthenticatedManageRouteRouteImport } from './routes/_authenti
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated/resources'
 import { Route as AuthenticatedStudentsRouteImport } from './routes/_authenticated/students'
 import { Route as AuthenticatedAssignmentsIdRouteImport } from './routes/_authenticated/assignments.$id'
+import { Route as AuthenticatedManageAiAssessmentRouteImport } from './routes/_authenticated/manage/ai-assessment'
 import { Route as AuthenticatedManageAnnouncementsRouteImport } from './routes/_authenticated/manage/announcements'
 import { Route as AuthenticatedManageAssessorsRouteImport } from './routes/_authenticated/manage/assessors'
 import { Route as AuthenticatedManageAssignmentsRouteImport } from './routes/_authenticated/manage/assignments'
@@ -74,6 +75,12 @@ const AuthenticatedAssignmentsIdRoute =
     id: '/assignments/$id',
     path: '/assignments/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManageAiAssessmentRoute =
+  AuthenticatedManageAiAssessmentRouteImport.update({
+    id: '/ai-assessment',
+    path: '/ai-assessment',
+    getParentRoute: () => AuthenticatedManageRouteRoute,
   } as any)
 const AuthenticatedManageAnnouncementsRoute =
   AuthenticatedManageAnnouncementsRouteImport.update({
@@ -145,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/resources': typeof AuthenticatedResourcesRoute
   '/students': typeof AuthenticatedStudentsRoute
   '/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
+  '/manage/ai-assessment': typeof AuthenticatedManageAiAssessmentRoute
   '/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
   '/manage/assessors': typeof AuthenticatedManageAssessorsRoute
   '/manage/assignments': typeof AuthenticatedManageAssignmentsRoute
@@ -165,6 +173,7 @@ export interface FileRoutesByTo {
   '/resources': typeof AuthenticatedResourcesRoute
   '/students': typeof AuthenticatedStudentsRoute
   '/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
+  '/manage/ai-assessment': typeof AuthenticatedManageAiAssessmentRoute
   '/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
   '/manage/assessors': typeof AuthenticatedManageAssessorsRoute
   '/manage/assignments': typeof AuthenticatedManageAssignmentsRoute
@@ -187,6 +196,7 @@ export interface FileRoutesById {
   '/_authenticated/resources': typeof AuthenticatedResourcesRoute
   '/_authenticated/students': typeof AuthenticatedStudentsRoute
   '/_authenticated/assignments/$id': typeof AuthenticatedAssignmentsIdRoute
+  '/_authenticated/manage/ai-assessment': typeof AuthenticatedManageAiAssessmentRoute
   '/_authenticated/manage/announcements': typeof AuthenticatedManageAnnouncementsRoute
   '/_authenticated/manage/assessors': typeof AuthenticatedManageAssessorsRoute
   '/_authenticated/manage/assignments': typeof AuthenticatedManageAssignmentsRoute
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/students'
     | '/assignments/$id'
+    | '/manage/ai-assessment'
     | '/manage/announcements'
     | '/manage/assessors'
     | '/manage/assignments'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/students'
     | '/assignments/$id'
+    | '/manage/ai-assessment'
     | '/manage/announcements'
     | '/manage/assessors'
     | '/manage/assignments'
@@ -250,6 +262,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resources'
     | '/_authenticated/students'
     | '/_authenticated/assignments/$id'
+    | '/_authenticated/manage/ai-assessment'
     | '/_authenticated/manage/announcements'
     | '/_authenticated/manage/assessors'
     | '/_authenticated/manage/assignments'
@@ -333,6 +346,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/assignments/$id'
       preLoaderRoute: typeof AuthenticatedAssignmentsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/manage/ai-assessment': {
+      id: '/_authenticated/manage/ai-assessment'
+      path: '/ai-assessment'
+      fullPath: '/manage/ai-assessment'
+      preLoaderRoute: typeof AuthenticatedManageAiAssessmentRouteImport
+      parentRoute: typeof AuthenticatedManageRouteRoute
     }
     '/_authenticated/manage/announcements': {
       id: '/_authenticated/manage/announcements'
@@ -423,6 +443,7 @@ const AuthenticatedManageSubmissionsRouteWithChildren =
   )
 
 interface AuthenticatedManageRouteRouteChildren {
+  AuthenticatedManageAiAssessmentRoute: typeof AuthenticatedManageAiAssessmentRoute
   AuthenticatedManageAnnouncementsRoute: typeof AuthenticatedManageAnnouncementsRoute
   AuthenticatedManageAssessorsRoute: typeof AuthenticatedManageAssessorsRoute
   AuthenticatedManageAssignmentsRoute: typeof AuthenticatedManageAssignmentsRoute
@@ -436,6 +457,7 @@ interface AuthenticatedManageRouteRouteChildren {
 
 const AuthenticatedManageRouteRouteChildren: AuthenticatedManageRouteRouteChildren =
   {
+    AuthenticatedManageAiAssessmentRoute: AuthenticatedManageAiAssessmentRoute,
     AuthenticatedManageAnnouncementsRoute:
       AuthenticatedManageAnnouncementsRoute,
     AuthenticatedManageAssessorsRoute: AuthenticatedManageAssessorsRoute,
