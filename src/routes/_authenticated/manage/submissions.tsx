@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/AppShell";
+import { useMe } from "@/lib/auth";
 import { useLocale } from "@/lib/locale";
 import {
   portalAssignmentsQuery,
@@ -28,12 +29,15 @@ function SubmissionRoute() {
 
 function SubmissionList() {
   const { t } = useLocale();
+  const { data: me } = useMe();
   const { data: submissions = [], isLoading } = useQuery(portalSubmissionsQuery);
   const { data: assignments = [] } = useQuery(portalAssignmentsQuery);
   const { data: classes = [] } = useQuery(portalClassesQuery);
   const [assignmentId, setAssignmentId] = useState("all");
   const [classId, setClassId] = useState("all");
   const [status, setStatus] = useState("all");
+  const [clearing, setClearing] = useState(false);
+  const isUnitLeader = me?.role === "unit_leader";
 
   const rows = submissions.filter(
     (item) =>
@@ -42,12 +46,38 @@ function SubmissionList() {
       (status === "all" || item.status === status),
   );
 
+  async function clearAllSubmissions() {
+    if (!isUnitLeader || submissions.length === 0) return;
+    if (!window.confirm(`Permanently delete all ${submissions.length} submissions from every student? This removes stored files, feedback, and submission records and cannot be undone.`)) return;
+    setClearing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("drive-storage", { body: { action: "delete_all_submissions" } });
+      if (error) throw error;
+      const deletedCount = Number(data?.deletedCount ?? 0);
+      const failedCount = Number(data?.failedCount ?? 0);
+      if (failedCount > 0) throw new Error(`${deletedCount} submissions deleted, but ${failedCount} could not be deleted. Check the function logs before retrying.`);
+      toast.success(`${deletedCount} submissions deleted.`);
+      await queryClient.invalidateQueries({ queryKey: ["portal", "submissions"] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not clear submissions.");
+      await queryClient.invalidateQueries({ queryKey: ["portal", "submissions"] });
+    } finally {
+      setClearing(false);
+    }
+  }
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title={t("submissions")}
         sub="Review and assess work from your permitted classes."
-      />
+      >
+        {isUnitLeader && (
+          <Button type="button" variant="destructive" className="w-full sm:w-auto" disabled={clearing || submissions.length === 0} onClick={() => void clearAllSubmissions()}>
+            <Trash2 className="h-4 w-4" />
+            {clearing ? "Clearing…" : `Clear all submissions (${submissions.length})`}
+          </Button>
+        )}
+      </PageHeader>
       <div className="mb-4 flex items-center gap-2 text-sm font-semibold">
         <Filter className="h-4 w-4" /> Filters
       </div>
@@ -137,13 +167,13 @@ function SubmissionLine({
     <Link
       to="/manage/submissions/$id"
       params={{ id: item.id }}
-      className="flex flex-wrap items-center gap-4 p-4 transition hover:bg-muted"
+      className="group flex flex-wrap items-start gap-3 p-3 transition hover:bg-muted sm:items-center sm:gap-4 sm:p-4"
     >
       <div className="min-w-0 flex-1">
         <p className="font-semibold">
           {item.profiles?.full_name ?? item.profiles?.email ?? item.student_id}
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className="w-full text-xs text-muted-foreground sm:w-auto sm:text-sm">
           {className ?? item.profiles?.group_name ?? t("unassigned")} · {item.assignments?.title} ·{" "}
           {t("attempt")} {item.attempt_no}
         </p>
@@ -162,7 +192,7 @@ function SubmissionLine({
           type="button"
           size="sm"
           variant="destructive"
-          className="shrink-0"
+          className="w-full shrink-0 sm:w-auto"
           disabled={deleting}
           title="Delete submission"
           aria-label={`Delete submission from ${item.profiles?.full_name ?? "student"}`}
