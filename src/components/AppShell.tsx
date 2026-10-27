@@ -43,7 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="flex shrink-0 flex-col bg-sidebar p-4 text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-64">
+      <aside className="flex min-w-0 shrink-0 flex-col overflow-hidden bg-sidebar p-3 text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-64 md:p-4">
         <Link to="/dashboard" className="block px-3 py-2">
           <img
             src={logoUrl}
@@ -60,7 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <p className="px-3 font-mono text-[10px] uppercase tracking-widest text-sidebar-primary">
           {isLeader ? t("unitLeader") : isAssessor ? t("assessor") : t("student")}
         </p>
-        <nav className="mt-6 flex flex-row flex-wrap gap-1 md:flex-col">
+        <nav className="mt-5 flex max-w-full flex-nowrap gap-1 overflow-x-auto pb-1 [scrollbar-width:none] md:flex-col md:overflow-visible md:pb-0">
           <Link to="/dashboard" className={linkCls} activeProps={{ className: activeCls }}>
             <LayoutDashboard className="h-4 w-4" /> {t("dashboard")}
           </Link>
@@ -159,7 +159,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 bg-background px-5 py-8 md:px-10 lg:px-14">{children}</main>
+      <main className="min-w-0 flex-1 bg-background px-3 py-5 sm:px-5 sm:py-7 md:px-10 md:py-8 lg:px-14">{children}</main>
     </div>
   );
 }
@@ -174,7 +174,7 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b pb-5">
+    <div className="mb-6 flex flex-col items-stretch gap-3 border-b pb-5 sm:mb-8 md:flex-row md:items-end md:justify-between md:gap-4">
       <div>
         <h1 className="text-2xl font-semibold md:text-3xl">{title}</h1>
         {sub && <p className="mt-1 text-muted-foreground">{sub}</p>}
