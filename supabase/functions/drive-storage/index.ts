@@ -621,6 +621,31 @@ async function downloadSubmission(
   return new Response(upstream.body, { status: upstream.status, headers });
 }
 
+async function deleteAllSubmissions(req: Request): Promise<Response> {
+  const { admin, profile } = await authenticate(req);
+  if (profile.role !== "unit_leader")
+    throw new HttpError("Only the Unit Leader can clear all submissions.", 403);
+  const { data: submissions, error } = await admin.from("submissions").select("id");
+  if (error) throw new HttpError("The submissions could not be listed for deletion.", 500);
+  let deletedCount = 0;
+  const failedSubmissionIds: string[] = [];
+  for (const submission of submissions ?? []) {
+    try {
+      const response = await deleteSubmission(req, { submissionId: submission.id });
+      if (!response.ok) throw new Error("Submission deletion failed.");
+      deletedCount += 1;
+    } catch {
+      failedSubmissionIds.push(String(submission.id));
+    }
+  }
+  return json(req, failedSubmissionIds.length ? 207 : 200, {
+    deleted: failedSubmissionIds.length === 0,
+    deletedCount,
+    failedCount: failedSubmissionIds.length,
+    failedSubmissionIds,
+  });
+}
+
 async function deleteSubmission(req: Request, payload: Record<string, unknown>): Promise<Response> {
   const { admin, user, profile } = await authenticate(req);
   if (profile.role !== "unit_leader" && profile.role !== "engineer")
@@ -812,6 +837,8 @@ Deno.serve(async (req: Request) => {
         return await downloadSubmission(req, payload);
       case "delete_submission":
         return await deleteSubmission(req, payload);
+      case "delete_all_submissions":
+        return await deleteAllSubmissions(req);
       case "ai_assess_submission":
         return await assessWithGemini(req, payload);
       default:
